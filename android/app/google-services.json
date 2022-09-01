@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "287132212670",
+    "project_id": "voicenote-1784f",
+    "storage_bucket": "voicenote-1784f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287132212670:android:cfcf797109207fd4bcadef",
+        "android_client_info": {
+          "package_name": "com.example.voicenotice"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287132212670-331lhtli9sqdsjq0b6hvb7dtmf0mdfud.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAua3aJuBAvicFfUu_Gvh12Q50qCa06J5E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287132212670-331lhtli9sqdsjq0b6hvb7dtmf0mdfud.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

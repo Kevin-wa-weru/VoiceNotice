@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:voicenotice/homepage.dart';
+import 'package:voicenotice/verifynumber.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -42,9 +42,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final phoneController = TextEditingController();
+    // CountryDetails details = CountryCodes.detailsForLocale();
+    // Locale locale = CountryCodes.getDeviceLocale()!;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      // resizeToAvoidBottomInset: false,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: Container(
@@ -55,7 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Container(
-                  height: 600.0,
+                  height: MediaQuery.of(context).size.height * 0.85,
                   color: Colors.white,
                   child: PageView(
                     physics: const ClampingScrollPhysics(),
@@ -207,180 +209,193 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ],
                       ),
-                      Column(
-                        children: [
-                          Container(
-                            color: Colors.white,
-                            height: 150,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Column(
-                                    children: [
-                                      const SizedBox(
-                                        height: 20,
-                                      ),
-                                      const Text('VOICE NOTICE',
-                                          style: TextStyle(
-                                            color: Color(0xFFBC343E),
-                                            fontFamily: 'Skranji',
-                                            fontSize: 30,
-                                          )),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      const Text(
-                                          'Set an alarm for your friends',
-                                          style: TextStyle(
-                                            color: Color(0xFF7689D6),
-                                            fontFamily: 'Skranji',
-                                            fontSize: 15,
-                                          )),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Row(
-                                        children: const [
-                                          Padding(
-                                            padding:
-                                                EdgeInsets.only(left: 20.0),
-                                            child: Text(
-                                                'Using custom recorded voices',
-                                                style: TextStyle(
-                                                  color: Color(0xFF7689D6),
-                                                  fontFamily: 'Skranji',
-                                                  fontSize: 15,
-                                                )),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                      SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Container(
+                              color: Colors.transparent,
+                              height: 150,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 8.0),
+                                    child: Column(
+                                      children: [
+                                        const SizedBox(
+                                          height: 20,
+                                        ),
+                                        const Text('VOICE NOTICE',
+                                            style: TextStyle(
+                                              color: Color(0xFFBC343E),
+                                              fontFamily: 'Skranji',
+                                              fontSize: 30,
+                                            )),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        const Text(
+                                            'Set an alarm for your friends',
+                                            style: TextStyle(
+                                              color: Color(0xFF7689D6),
+                                              fontFamily: 'Skranji',
+                                              fontSize: 15,
+                                            )),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        Row(
+                                          children: const [
+                                            Padding(
+                                              padding:
+                                                  EdgeInsets.only(left: 20.0),
+                                              child: Text(
+                                                  'Using custom recorded voices',
+                                                  style: TextStyle(
+                                                    color: Color(0xFF7689D6),
+                                                    fontFamily: 'Skranji',
+                                                    fontSize: 15,
+                                                  )),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: SizedBox(
-                                    height: 105.25,
-                                    width: 100.5,
-                                    child: SvgPicture.asset(
-                                        'assets/images/img13.svg',
-                                        fit: BoxFit.fitWidth),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            // color: Colors.red,
-                            height: MediaQuery.of(context).size.height * 0.3,
-                            width: MediaQuery.of(context).size.width,
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 50,
-                                ),
-                                SizedBox(
-                                  height: 250.25,
-                                  width: 200.5,
-                                  child: Image.asset(
-                                    "assets/images/gif1.gif",
-                                    height: 125.0,
-                                    width: 125.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          SizedBox(
-                            width: 400,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: TextFormField(
-                                style: const TextStyle(
-                                    fontFamily: 'Skranji',
-                                    fontWeight: FontWeight.w600),
-                                keyboardType: TextInputType.name,
-                                decoration: InputDecoration(
-                                  fillColor: Colors.white60,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                    borderSide: const BorderSide(
-                                        color: Colors.transparent, width: 0),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                        color: Color(0xFF7689D6), width: 0.2),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                        color: Color(0xFF7689D6), width: 2),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
-                                  prefixIcon: Padding(
-                                    padding: const EdgeInsets.all(12.0),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
                                     child: SizedBox(
-                                      height: 6,
-                                      width: 6,
+                                      height: 105.25,
+                                      width: 100.5,
+                                      child: SvgPicture.asset(
+                                          'assets/images/img13.svg',
+                                          fit: BoxFit.fitWidth),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              // color: Colors.red,
+                              height: MediaQuery.of(context).size.height * 0.3,
+                              width: MediaQuery.of(context).size.width,
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 50,
+                                  ),
+                                  SizedBox(
+                                    height: 250.25,
+                                    width: 200.5,
+                                    child: Image.asset(
+                                      "assets/images/gif1.gif",
+                                      height: 125.0,
+                                      width: 125.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            const Center(
+                              child: Text('Enter your phone number',
+                                  style: TextStyle(
+                                    color: Color(0xFF385A64),
+                                    fontFamily: 'Skranji',
+                                    fontSize: 18,
+                                  )),
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            SizedBox(
+                              width: 400,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: TextFormField(
+                                  // textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      fontFamily: 'Skranji',
+                                      fontWeight: FontWeight.w600),
+                                  keyboardType: TextInputType.name,
+                                  decoration: InputDecoration(
+                                    fillColor: const Color(0xFFF5F5F5),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                      borderSide: const BorderSide(
+                                          color: Colors.transparent, width: 0),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                          color: Colors.transparent,
+                                          width: 0.2),
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                          color: Colors.transparent, width: 2),
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    prefixIcon: Padding(
+                                      padding: const EdgeInsets.all(14),
                                       child: SvgPicture.asset(
                                           'assets/icons/phone.svg',
-                                          height: 6,
                                           color: Colors.black,
                                           fit: BoxFit.fitHeight),
                                     ),
+                                    filled: true,
+                                    hintText: 'Phone number',
+                                    hintStyle: const TextStyle(
+                                        color: Colors.black54,
+                                        fontFamily: 'Skranji',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 18),
                                   ),
-                                  filled: true,
-                                  hintText: 'Phone number',
-                                  hintStyle: const TextStyle(
-                                      color: Colors.black54,
-                                      fontFamily: 'Skranji',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12),
+                                  onChanged: (value) {
+                                    setState(() {});
+                                  },
+                                  controller: phoneController,
                                 ),
-                                onChanged: (value) {
-                                  setState(() {});
-                                },
-                                controller: phoneController,
                               ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) {
-                                return HomePage();
-                              }));
-                            },
-                            child: Container(
-                              height: 40,
-                              width: 150,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                color: const Color(0xFF7689D6),
-                              ),
-                              child: const Center(
-                                child: Text('Create Account',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontFamily: 'Skranji',
-                                      fontSize: 15,
-                                    )),
-                              ),
+                            const SizedBox(
+                              height: 20,
                             ),
-                          )
-                        ],
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) {
+                                  return const VerifyNumber(
+                                    number: '+254700583879',
+                                  );
+                                }));
+                              },
+                              child: Container(
+                                height: 40,
+                                width: 150,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: const Color(0xFF7689D6),
+                                ),
+                                child: const Center(
+                                  child: Text('Create Account',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Skranji',
+                                        fontSize: 15,
+                                      )),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -437,7 +452,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ),
                       )
-                    : const Text(''),
+                    : Container(),
               ],
             ),
           ),
