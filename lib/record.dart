@@ -626,6 +626,16 @@ class _RecordingPageState extends State<RecordingPage> {
 
                         final CollectionReference alarmRef =
                             FirebaseFirestore.instance.collection("alarms");
+                        final CollectionReference usersRef =
+                            FirebaseFirestore.instance.collection("users");
+
+                        //get userid of the phone to pass as targetUser id
+
+                        var snapshot = await usersRef
+                            .where('phone', isEqualTo: widget.user['phone'])
+                            .get();
+
+                        var userID = await snapshot.docs.first.id;
 
                         //  final FirebaseAuth auth = FirebaseAuth.instance;
                         // final User? user = auth.currentUser;
@@ -635,8 +645,8 @@ class _RecordingPageState extends State<RecordingPage> {
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
-                          'RecordUrl': audioUrl,
-                          'TargetUserid': widget.user['phone'],
+                          'RecordUrl': 'sound.mp3',
+                          'TargetUserid': userID,
                           'CreateByUserID': 'RBlD6eB8zVPhPvxz1czJkxi44Es1',
                           'createdByUserName': widget.user['userName'],
                         });

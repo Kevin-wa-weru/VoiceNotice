@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
 
   final listKey = GlobalKey<AnimatedListState>();
 
-  void removeItem(int index, alarmIDinDB, date) async {
+  void removeItem(int index, alarmIDinDB, date, recordUrl) async {
     final player = AudioPlayer();
 
     await player.play(AssetSource('delete.wav'));
@@ -239,9 +239,8 @@ class _HomePageState extends State<HomePage> {
     _alarmHelper.delete(alarmIDinDB);
     //REmove from firebase
     var collection = FirebaseFirestore.instance.collection('alarms');
-    var snapshot = await collection
-        .where('DateTime', isEqualTo: Timestamp.fromDate(date))
-        .get();
+    var snapshot =
+        await collection.where('RecordUrl', isEqualTo: recordUrl).get();
     await snapshot.docs.first.reference.delete();
   }
 
@@ -501,8 +500,11 @@ class _HomePageState extends State<HomePage> {
                               item: snapshot.data![index],
                               animation: animation,
                               onClicked: () {
-                                removeItem(index, snapshot.data![index].id,
-                                    snapshot.data![index].alarmDateTime);
+                                removeItem(
+                                    index,
+                                    snapshot.data![index].id,
+                                    snapshot.data![index].alarmDateTime,
+                                    snapshot.data![index].fileRef);
                               });
                         }),
                   );
@@ -715,7 +717,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                   child: Row(
                                     children: [
                                       Text(
-                                          '${widget.item.alarmDateTime!.hour} : ${widget.item.alarmDateTime!.minute}',
+                                          '${widget.item.hour} : ${widget.item.minute}',
                                           style: const TextStyle(
                                             color: Color(0xFF7689D6),
                                             fontFamily: 'Skranji',

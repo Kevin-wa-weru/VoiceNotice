@@ -5,8 +5,11 @@ const String tableAlarm = 'alarm';
 const String columnId = 'id';
 const String columnTitle = 'title';
 const String columnDateTime = 'alarmDateTime';
+const String columnHour = 'hour';
+const String columnMinute = 'minute';
 const String columnCreator = 'creator';
 const String columnAudioPath = 'audioPath';
+const String columnfileRef = 'fileRef';
 
 class AlarmHelper {
   static Database? _database;
@@ -42,8 +45,11 @@ class AlarmHelper {
           $columnId integer primary key autoincrement, 
           $columnTitle text not null,
           $columnDateTime text not null,
+          $columnHour integer not null,
+          $columnMinute integer not null,
           $columnCreator text not null,
-          $columnAudioPath text not null)
+          $columnAudioPath text not null,
+          $columnfileRef text not null)
         ''');
       },
     );
@@ -74,16 +80,25 @@ class AlarmHelper {
     return await db.delete(tableAlarm, where: '$columnId = ?', whereArgs: [id]);
   }
 
-  Future<bool> checkIfAlarmExists(date) async {
+  Future<bool> checkIfAlarmExists(fileRef) async {
     var db = await this.database;
     var queryResult = await db
-        .rawQuery('SELECT * FROM $tableAlarm WHERE $columnDateTime="$date"');
+        .rawQuery('SELECT * FROM $tableAlarm WHERE $columnfileRef="$fileRef"');
 
     if (queryResult.isEmpty) {
       return false;
     } else {
       return true;
     }
+  }
+
+  Future updateAlarm(hour, minute, fileRef) async {
+    var db = await this.database;
+    await db.rawUpdate('''
+    UPDATE $tableAlarm 
+    SET $columnHour = ?, $columnMinute = ?
+    WHERE $columnfileRef = ?
+    ''', [hour, minute, fileRef]);
   }
 }
 
@@ -93,9 +108,20 @@ class AlarmInfo {
   DateTime? alarmDateTime;
   String? creator;
   String? audioPath;
+  String? fileRef;
+  int? hour;
+  int? minute;
 
-  AlarmInfo(
-      {this.id, this.title, this.alarmDateTime, this.creator, this.audioPath});
+  AlarmInfo({
+    this.id,
+    this.title,
+    this.alarmDateTime,
+    this.creator,
+    this.audioPath,
+    this.fileRef,
+    this.hour,
+    this.minute,
+  });
 
   factory AlarmInfo.fromMap(Map<String, dynamic> json) => AlarmInfo(
         id: json["id"],
@@ -103,6 +129,9 @@ class AlarmInfo {
         alarmDateTime: DateTime.parse(json["alarmDateTime"]),
         creator: json["creator"],
         audioPath: json["audioPath"],
+        fileRef: json["fileRef"],
+        hour: json["hour"],
+        minute: json["minute"],
       );
   Map<String, dynamic> toMap() => {
         "id": id,
@@ -110,5 +139,8 @@ class AlarmInfo {
         "alarmDateTime": alarmDateTime!.toIso8601String(),
         "creator": creator,
         "audioPath": audioPath,
+        "fileRef": fileRef,
+        "hour": hour,
+        "minute": minute,
       };
 }

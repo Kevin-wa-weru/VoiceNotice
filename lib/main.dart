@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_codes/country_codes.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -17,10 +18,23 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
 import 'package:voicenotice/services/hive.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:voicenotice/services/notifications.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeService();
+
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  var initializationSettingsAndroid =
+      const AndroidInitializationSettings('mipmap/ic_launcher');
+  var initializationSettingsIOS = const IOSInitializationSettings();
+  var initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+  flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+  );
   await Hive.initFlutter();
   await Firebase.initializeApp();
   await CountryCodes.init();
@@ -93,7 +107,7 @@ bool onIosBackground(ServiceInstance service) {
 void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
-
+  final player = AudioPlayer();
   // For flutter prior to version 3.0.0
   // We have to register the plugin manually
 
@@ -176,10 +190,13 @@ void onStart(ServiceInstance service) async {
       late List filteredAlarms = [];
 
       for (var alarm in alarms) {
-        bool exists = await _alarmHelper.checkIfAlarmExists(
-            DateTime.parse(alarm['DateTime'].toDate().toString()));
+        bool exists = await _alarmHelper.checkIfAlarmExists(alarm['RecordUrl']);
 
         if (exists) {
+          _alarmHelper.updateAlarm(
+              DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
+              DateTime.parse(alarm['DateTime'].toDate().toString()).minute,
+              alarm['RecordUrl']);
         } else {
           filteredAlarms.add(alarm);
         }
@@ -188,22 +205,46 @@ void onStart(ServiceInstance service) async {
       print('MAINNN FILTERED ALARMS  ===== $filteredAlarms');
 
       if (filteredAlarms.isEmpty) {
+        print(
+            'BACKGROUNDS:::::::   FILTERED THROUGH LOCAL DB AND FOUND SIMILAR ALARAMS');
       } else {
         late List<AlarmInfo> _alarmInfo = [];
         for (var alarm in filteredAlarms) {
           var alarmInfo = AlarmInfo(
-              title: alarm['AlarmTitle'],
-              alarmDateTime:
-                  DateTime.parse(alarm['DateTime'].toDate().toString()),
-              creator: alarm['createdByUserName'],
-              audioPath:
-                  await saveToLocal(alarm['RecordUrl'], alarm['DateTime']));
+            title: alarm['AlarmTitle'],
+            alarmDateTime:
+                DateTime.parse(alarm['DateTime'].toDate().toString()),
+            hour: DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
+            minute:
+                DateTime.parse(alarm['DateTime'].toDate().toString()).minute,
+            creator: alarm['createdByUserName'],
+            audioPath: await saveToLocal(alarm['RecordUrl'], alarm['DateTime']),
+            fileRef: alarm['RecordUrl'],
+          );
           _alarmInfo.add(alarmInfo);
         }
 
         for (var alarm in _alarmInfo) {
           print(alarm.creator);
           _alarmHelper.insertAlarm(alarm);
+        }
+      }
+
+      List<AlarmInfo> alarmsInLocalDB = await _alarmHelper.getAlarms();
+      for (var alarm in alarmsInLocalDB) {
+        print('BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().hour}');
+        print(
+            'BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().minute}');
+        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.hour}');
+        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.minute}');
+        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.audioPath!}');
+        if (DateTime.now().hour == alarm.hour &&
+            DateTime.now().minute == alarm.minute) {
+          Notificationed.showNotification(
+                  title: alarm.title, body: alarm.creator)
+              .then((value) async {
+            await player.play(DeviceFileSource(alarm.audioPath!));
+          });
         }
       }
     }
