@@ -601,7 +601,8 @@ class _RecordingPageState extends State<RecordingPage> {
                             .child(DateTime.now().microsecond.toString())
                             .putFile(File(await player.getFile()));
 
-                        String audioUrl = await response.ref.getDownloadURL();
+                        // String audioUrl = await response.ref.getDownloadURL();
+                        String audioUrl = response.ref.name;
 
                         print(audioUrl);
 

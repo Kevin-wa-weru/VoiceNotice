@@ -5,13 +5,14 @@ import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:day_night_time_picker/lib/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
 import 'package:voicenotice/models/user_alarms.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/record.dart';
-import 'package:voicenotice/services/firebase.dart';
+import 'package:voicenotice/services/alarm_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -22,12 +23,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<AlarmInfo>? _allAlarms;
+  final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
 
   getContactsWithPermission() async {
-    //First get User data
-
-    // var userData = await usersRef.doc(FirebaseServices().getUserId()).get();
     String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
 
     var userData = await FirebaseFirestore.instance
@@ -37,17 +37,27 @@ class _HomePageState extends State<HomePage> {
 
     print(userData.data());
 
-    List userWithPermissionIDS = userData.data()!['canCreate'];
+    List userWithPermissionPhones = userData.data()!['canCreate'];
 
     print('userWithPermissionIDS');
-    print(userWithPermissionIDS);
+    print(userWithPermissionPhones);
 
     //Then get all users info with permission
 
-    for (var user in userWithPermissionIDS) {
-      var response =
-          await FirebaseFirestore.instance.collection("users").doc(user).get();
-      usersWithPermission!.add(response.data());
+    List tempHolder = [];
+
+    for (var user in userWithPermissionPhones) {
+      var response = await FirebaseFirestore.instance
+          .collection("users")
+          .where('phone', isEqualTo: user)
+          .get();
+      tempHolder.add(response.docs);
+    }
+
+    print('Temp Holder: $tempHolder');
+
+    for (var user in tempHolder) {
+      usersWithPermission!.add(user[0].data());
     }
 
     print('usersWithPermission');
@@ -58,8 +68,10 @@ class _HomePageState extends State<HomePage> {
     PermissionStatus permissionStatus = await _getContactPermission();
     if (permissionStatus == PermissionStatus.granted) {
       print('Permision given');
+      await _getStoragePermission();
     } else {
       _handleInvalidPermissions(permissionStatus);
+      await _getStoragePermission();
     }
   }
 
@@ -102,8 +114,15 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _askContactsPermissions('');
-    _getStoragePermission();
     getContactsWithPermission();
+    _alarmHelper.initializeDatabase().then((value) => loadAlarms());
+  }
+
+  Future<List<AlarmInfo>?> loadAlarms() async {
+    _allAlarms = await _alarmHelper.getAlarms();
+    // if (mounted) setState(() {});
+    print('ALL ALARMS ======= $_allAlarms');
+    return _allAlarms;
   }
 
   void modalBottomSheetMenu() {
@@ -198,12 +217,12 @@ class _HomePageState extends State<HomePage> {
 
   final listKey = GlobalKey<AnimatedListState>();
 
-  void removeItem(int index) async {
+  void removeItem(int index, alarmIDinDB, date) async {
     final player = AudioPlayer();
 
     await player.play(AssetSource('delete.wav'));
 
-    final removedItem = allUserAlarms[index];
+    final removedItem = _allAlarms![index];
 
     allUserAlarms.removeAt(index);
     listKey.currentState!.removeItem(
@@ -215,6 +234,15 @@ class _HomePageState extends State<HomePage> {
       ),
       duration: const Duration(milliseconds: 500),
     );
+
+    //Remove from loal DB
+    _alarmHelper.delete(alarmIDinDB);
+    //REmove from firebase
+    var collection = FirebaseFirestore.instance.collection('alarms');
+    var snapshot = await collection
+        .where('DateTime', isEqualTo: Timestamp.fromDate(date))
+        .get();
+    await snapshot.docs.first.reference.delete();
   }
 
   @override
@@ -454,19 +482,31 @@ class _HomePageState extends State<HomePage> {
             //     color: Colors.black12,
             //   ),
             // ),
-            Expanded(
-              child: AnimatedList(
-                  key: listKey,
-                  initialItemCount: allUserAlarms.length,
-                  itemBuilder: (context, index, animation) {
-                    return ListItemWidget(
-                        item: allUserAlarms[index],
-                        animation: animation,
-                        onClicked: () {
-                          removeItem(index);
-                        });
-                  }),
-            ),
+            FutureBuilder<List<AlarmInfo>?>(
+                future: loadAlarms(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                  } else {
+                    return const Center(
+                      child: Text('NO alarms have been created fro you'),
+                    );
+                  }
+
+                  return Expanded(
+                    child: AnimatedList(
+                        key: listKey,
+                        initialItemCount: snapshot.data!.length,
+                        itemBuilder: (context, index, animation) {
+                          return ListItemWidget(
+                              item: snapshot.data![index],
+                              animation: animation,
+                              onClicked: () {
+                                removeItem(index, snapshot.data![index].id,
+                                    snapshot.data![index].alarmDateTime);
+                              });
+                        }),
+                  );
+                }),
           ],
         ),
         const CreatedAlarms(),
@@ -479,7 +519,7 @@ class _HomePageState extends State<HomePage> {
 
 // ignore: must_be_immutable
 class ListItemWidget extends StatefulWidget {
-  final UserAlarms item;
+  final AlarmInfo item;
   final Animation<double> animation;
   final VoidCallback? onClicked;
   const ListItemWidget(
@@ -568,9 +608,9 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                               // 1.5
                                             ),
                                           ),
-                                          child: const Center(
-                                            child: Text('Joy',
-                                                style: TextStyle(
+                                          child: Center(
+                                            child: Text(widget.item.creator!,
+                                                style: const TextStyle(
                                                   color: Colors.white,
                                                   fontFamily: 'Skranji',
                                                   fontSize: 18,
@@ -585,8 +625,8 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                         ),
                                         child: Row(
                                           children: [
-                                            const Text('WakyWaky',
-                                                style: TextStyle(
+                                            Text(widget.item.title!,
+                                                style: const TextStyle(
                                                   color: Color(0x991A1314),
                                                   fontFamily: 'Skranji',
                                                   fontSize: 18,
@@ -673,18 +713,23 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                   padding:
                                       const EdgeInsets.only(left: 20.0, top: 5),
                                   child: Row(
-                                    children: const [
-                                      Text('10:30 PM ',
-                                          style: TextStyle(
+                                    children: [
+                                      Text(
+                                          '${widget.item.alarmDateTime!.hour} : ${widget.item.alarmDateTime!.minute}',
+                                          style: const TextStyle(
                                             color: Color(0xFF7689D6),
                                             fontFamily: 'Skranji',
                                             fontSize: 28,
                                           )),
-                                      SizedBox(
+                                      const SizedBox(
                                         width: 4,
                                       ),
-                                      Text('Wednesday ',
-                                          style: TextStyle(
+                                      Text(
+                                          DateFormat('EEEE')
+                                              .format(
+                                                  widget.item.alarmDateTime!)
+                                              .toString(),
+                                          style: const TextStyle(
                                             color: Color(0xFF385A64),
                                             fontFamily: 'Skranji',
                                             fontSize: 18,
@@ -700,9 +745,10 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 40.0),
                               child: Row(
-                                children: const [
-                                  Text('Joy Created this alarm for you',
-                                      style: TextStyle(
+                                children: [
+                                  Text(
+                                      '${widget.item.creator!} Created this alarm for you',
+                                      style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',
                                         fontSize: 18,
@@ -718,7 +764,9 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                         child: InkWell(
                           onTap: () {
                             print('Clicked');
-                            widget.onClicked!();
+                            setState(() {
+                              widget.onClicked!();
+                            });
                           },
                           child: Container(
                             height: 50,
