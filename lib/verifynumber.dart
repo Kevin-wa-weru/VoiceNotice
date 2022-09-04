@@ -56,6 +56,9 @@ class _VerifyNumberState extends State<VerifyNumber> {
             await usersRef.doc(value.user!.uid).set({
               'userid': value.user!.uid,
               'phone': phoneNumber,
+              'canCreate': [],
+              'canDelete': [],
+              'canEdit': [],
             });
 
             // ignore: use_build_context_synchronously

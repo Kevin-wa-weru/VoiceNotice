@@ -8,4 +8,12 @@ class FirebaseServices {
   String getUserId() {
     return firebaseAuth.currentUser!.uid;
   }
+
+  String getUserPhone() {
+    return firebaseAuth.currentUser!.phoneNumber!;
+  }
+
+  String getUserUserName() {
+    return firebaseAuth.currentUser!.displayName!;
+  }
 }

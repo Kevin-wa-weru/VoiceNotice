@@ -4,7 +4,6 @@ import 'dart:ui';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:country_codes/country_codes.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +36,7 @@ Future main() async {
   );
   await Hive.initFlutter();
   await Firebase.initializeApp();
-  await CountryCodes.init();
+
   Hive.registerAdapter(UserRegAdapter());
   await Hive.openBox<UserReg>('account');
   runApp(const MyApp());
@@ -63,7 +62,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: userid != null ? const OnboardingScreen() : const HomePage(),
+      home: userid == null ? const OnboardingScreen() : const HomePage(),
     );
   }
 }
@@ -126,7 +125,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(minutes: 1), (timer) async {
+  Timer.periodic(const Duration(minutes: 30), (timer) async {
     if (service is AndroidServiceInstance) {
       service.setForegroundNotificationInfo(
         title: "My App Service",

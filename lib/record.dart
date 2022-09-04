@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:voicenotice/services/audio_player.dart';
 import 'package:voicenotice/services/audio_recorder.dart';
 import 'package:flutter_holo_date_picker/flutter_holo_date_picker.dart';
+import 'package:voicenotice/services/firebase.dart';
 
 class RecordingPage extends StatefulWidget {
   const RecordingPage({Key? key, required this.user}) : super(key: key);
@@ -587,8 +588,13 @@ class _RecordingPageState extends State<RecordingPage> {
                           datePicked == null) {
                         var snackBar = const SnackBar(
                             content: Text(
-                                'Make sure you have selected everything '));
-                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                          'Make sure you have selected everything',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Skranji',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18),
+                        ));
                       } else {
                         setState(() {
                           appisLoading = true;
@@ -645,16 +651,25 @@ class _RecordingPageState extends State<RecordingPage> {
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
-                          'RecordUrl': 'sound.mp3',
+                          'RecordUrl': audioUrl,
                           'TargetUserid': userID,
                           'CreateByUserID': 'RBlD6eB8zVPhPvxz1czJkxi44Es1',
                           'createdByUserName': widget.user['userName'],
+                          //   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+                          // firebaseAuth.currentUser!.displayName!;
+                          'createdByPhoneNUmber': widget.user['phone'],
+                          // firebaseAuth.currentUser!.phoneNumber!;
                         });
 
-                        var snackBar =
-                            const SnackBar(content: Text('Alarm has been set'));
-                        // ignore: use_build_context_synchronously
-                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        var snackBar = const SnackBar(
+                            content: Text(
+                          'Alarm has been set',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Skranji',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18),
+                        ));
 
                         setState(() {
                           appisLoading = false;

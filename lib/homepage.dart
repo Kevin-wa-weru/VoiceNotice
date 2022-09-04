@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<AlarmInfo>? _allAlarms;
+  late List<AlarmInfo>? _allAlarms = [];
   final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
 
@@ -88,25 +88,43 @@ class _HomePageState extends State<HomePage> {
 
   void _handleInvalidPermissions(PermissionStatus permissionStatus) {
     if (permissionStatus == PermissionStatus.denied) {
-      const snackBar = SnackBar(content: Text('Access to contact data denied'));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      var snackBar = const SnackBar(
+          content: Text(
+        'Access to storage denied',
+        style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Skranji',
+            fontWeight: FontWeight.w500,
+            fontSize: 18),
+      ));
     } else if (permissionStatus == PermissionStatus.permanentlyDenied) {
-      const snackBar =
-          SnackBar(content: Text('Contact data not available on device'));
+      var snackBar = const SnackBar(
+          content: Text(
+        'Contact data not available in device',
+        style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Skranji',
+            fontWeight: FontWeight.w500,
+            fontSize: 18),
+      ));
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
   }
 
   Future _getStoragePermission() async {
     if (await Permission.storage.request().isGranted) {
-      const snackBar =
-          SnackBar(content: Text('Access to storage data accepted'));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
     } else if (await Permission.storage.request().isPermanentlyDenied) {
       await openAppSettings();
     } else if (await Permission.storage.request().isDenied) {
-      const snackBar = SnackBar(content: Text('Access to storage data denied'));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      var snackBar = const SnackBar(
+          content: Text(
+        'Access to Storage denied ',
+        style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Skranji',
+            fontWeight: FontWeight.w500,
+            fontSize: 18),
+      ));
     }
   }
 
@@ -120,6 +138,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<List<AlarmInfo>?> loadAlarms() async {
     _allAlarms = await _alarmHelper.getAlarms();
+
     // if (mounted) setState(() {});
     print('ALL ALARMS ======= $_allAlarms');
     return _allAlarms;
@@ -235,7 +254,7 @@ class _HomePageState extends State<HomePage> {
       duration: const Duration(milliseconds: 500),
     );
 
-    //Remove from loal DB
+    //Remove from local DB
     _alarmHelper.delete(alarmIDinDB);
     //REmove from firebase
     var collection = FirebaseFirestore.instance.collection('alarms');
@@ -484,30 +503,48 @@ class _HomePageState extends State<HomePage> {
             FutureBuilder<List<AlarmInfo>?>(
                 future: loadAlarms(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasData) {
+                  if (_allAlarms!.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 20.0),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 250.25,
+                            width: 200.5,
+                            child: Image.asset(
+                              "assets/images/empty.gif",
+                              height: 125.0,
+                              width: 125.0,
+                            ),
+                          ),
+                          const Text('No alarms for you yet',
+                              style: TextStyle(
+                                color: Color(0xCC385A64),
+                                fontFamily: 'Skranji',
+                                fontSize: 18,
+                              )),
+                        ],
+                      ),
+                    );
                   } else {
-                    return const Center(
-                      child: Text('NO alarms have been created fro you'),
+                    return Expanded(
+                      child: AnimatedList(
+                          key: listKey,
+                          initialItemCount: snapshot.data!.length,
+                          itemBuilder: (context, index, animation) {
+                            return ListItemWidget(
+                                item: snapshot.data![index],
+                                animation: animation,
+                                onClicked: () {
+                                  removeItem(
+                                      index,
+                                      snapshot.data![index].id,
+                                      snapshot.data![index].alarmDateTime,
+                                      snapshot.data![index].fileRef);
+                                });
+                          }),
                     );
                   }
-
-                  return Expanded(
-                    child: AnimatedList(
-                        key: listKey,
-                        initialItemCount: snapshot.data!.length,
-                        itemBuilder: (context, index, animation) {
-                          return ListItemWidget(
-                              item: snapshot.data![index],
-                              animation: animation,
-                              onClicked: () {
-                                removeItem(
-                                    index,
-                                    snapshot.data![index].id,
-                                    snapshot.data![index].alarmDateTime,
-                                    snapshot.data![index].fileRef);
-                              });
-                        }),
-                  );
                 }),
           ],
         ),

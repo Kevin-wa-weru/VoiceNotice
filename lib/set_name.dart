@@ -95,8 +95,26 @@ class _SetNameState extends State<SetName> {
           InkWell(
             onTap: () async {
               if (nameController.text.isEmpty) {
-                var snackBar =
-                    const SnackBar(content: Text('Provide Username'));
+                var snackBar = const SnackBar(
+                    content: Text(
+                  'Provide a username',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Skranji',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 18),
+                ));
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+              } else if (nameController.text.length > 8) {
+                var snackBar = const SnackBar(
+                    content: Text(
+                  'Should not be more then 8 words',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Skranji',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 18),
+                ));
                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
               } else {
                 //update username in authenticated users
@@ -127,6 +145,7 @@ class _SetNameState extends State<SetName> {
                     .update({'userName': nameController.text});
 
                 //route to homepage
+                // ignore: use_build_context_synchronously
                 Navigator.push(context, MaterialPageRoute(builder: (context) {
                   return const HomePage();
                 }));
