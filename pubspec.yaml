@@ -57,6 +57,10 @@ dependencies:
   flutter_background_service_android: ^2.0.3
   device_info_plus: ^4.1.2
   flutter_local_notifications: ^9.9.1
+  bloc: ^8.1.0
+  flutter_bloc: ^8.1.1
+  freezed: ^2.1.0+1
+  # shared_preferences: ^2.0.15
   # geolocator: ^9.0.1
   # geocoding: ^2.0.5
   
@@ -70,6 +74,8 @@ dev_dependencies:
 
   flutter_lints: ^2.0.0
   build_runner: ^2.2.0
+  # freezed: ^1.1.0
+  bloc_test: ^9.0.3
 
 flutter:
   assets:

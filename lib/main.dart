@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -12,17 +11,24 @@ import 'package:flutter_background_service_android/flutter_background_service_an
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:voicenotice/homepage.dart';
+import 'package:voicenotice/mainscreen.dart';
 import 'package:voicenotice/models/user_credentials.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
+import 'package:voicenotice/services/background_audio.dart';
 import 'package:voicenotice/services/hive.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:voicenotice/services/notifications.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeService();
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(UserRegAdapter());
+  await Hive.openBox<UserReg>('account');
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -31,14 +37,19 @@ Future main() async {
   var initializationSettingsIOS = const IOSInitializationSettings();
   var initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
-  flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-  );
-  await Hive.initFlutter();
+  flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (payload) async {
+    AlarmHelper _alarmHelper = AlarmHelper();
+    _alarmHelper.updateAudioState('NO', 'PANAMA');
+    List<PlayerStating> audioState = await _alarmHelper.getAudioState();
+    print('TIMETRAVELLING CHANGE NOTIFIERRR:::${audioState.first.state}');
+    Timer(const Duration(seconds: 2), () async {
+      _alarmHelper.deleteAudioState(audioState.first.constName!);
+    });
+  });
+
   await Firebase.initializeApp();
 
-  Hive.registerAdapter(UserRegAdapter());
-  await Hive.openBox<UserReg>('account');
   runApp(const MyApp());
 }
 
@@ -62,7 +73,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: userid == null ? const OnboardingScreen() : const HomePage(),
+      home: userid != null ? const OnboardingScreen() : const MainScreen(),
     );
   }
 }
@@ -106,7 +117,7 @@ bool onIosBackground(ServiceInstance service) {
 void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
-  final player = AudioPlayer();
+  // final player = AudioPlayer();
   // For flutter prior to version 3.0.0
   // We have to register the plugin manually
 
@@ -125,7 +136,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(minutes: 30), (timer) async {
+  Timer.periodic(const Duration(minutes: 20), (timer) async {
     if (service is AndroidServiceInstance) {
       service.setForegroundNotificationInfo(
         title: "My App Service",
@@ -133,17 +144,7 @@ void onStart(ServiceInstance service) async {
       );
     }
 
-    /// you can see this log in logcat
     print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
-
-    // if (DateTime.now().minute == 25) {
-    //   Notificationed.showNotification(
-    //           title: 'Alarming', body: 'Hello it is time')
-    //       .then((value) async {
-    //         // DeviceFileSource
-    //     await player.play(AssetSource('sound.mp3'),);
-    //   });
-    // }
 
     // var userData = await usersRef.doc(FirebaseServices().getUserId()).get();
     await Firebase.initializeApp();
@@ -239,10 +240,17 @@ void onStart(ServiceInstance service) async {
         print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.audioPath!}');
         if (DateTime.now().hour == alarm.hour &&
             DateTime.now().minute == alarm.minute) {
+          _alarmHelper.insertAudioState(PlayerStating(
+            constName: 'PANAMA',
+            state: 'YES',
+          ));
           Notificationed.showNotification(
-                  title: alarm.title, body: alarm.creator)
+                  title: '${alarm.creator} says ${alarm.title}',
+                  body: 'TAP TO STOP PLAYING')
               .then((value) async {
-            await player.play(DeviceFileSource(alarm.audioPath!));
+            final play = BackgroundAudio();
+
+            play.playBackgroundAudio(alarm.minute, alarm.audioPath);
           });
         }
       }

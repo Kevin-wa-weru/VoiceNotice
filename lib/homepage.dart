@@ -6,13 +6,16 @@ import 'package:day_night_time_picker/lib/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
-import 'package:voicenotice/models/user_alarms.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/record.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
+import 'package:voicenotice/services/background_audio.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,7 +26,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late List<AlarmInfo>? _allAlarms = [];
+  List allUserAlarms = [];
   final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
 
@@ -131,17 +134,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    final play = BackgroundAudio();
+
+    play.stopBackgroundAudio();
     _askContactsPermissions('');
     getContactsWithPermission();
-    _alarmHelper.initializeDatabase().then((value) => loadAlarms());
-  }
-
-  Future<List<AlarmInfo>?> loadAlarms() async {
-    _allAlarms = await _alarmHelper.getAlarms();
-
-    // if (mounted) setState(() {});
-    print('ALL ALARMS ======= $_allAlarms');
-    return _allAlarms;
+    context.read<AllAlarmsCubit>().getAllUSeralarms();
+    print(allUserAlarms);
   }
 
   void modalBottomSheetMenu() {
@@ -236,14 +236,16 @@ class _HomePageState extends State<HomePage> {
 
   final listKey = GlobalKey<AnimatedListState>();
 
-  void removeItem(int index, alarmIDinDB, date, recordUrl) async {
+  void removeItem(int index, recordUrl) async {
+    print(allUserAlarms);
+    print(index);
+    print(recordUrl);
     final player = AudioPlayer();
 
     await player.play(AssetSource('delete.wav'));
 
-    final removedItem = _allAlarms![index];
+    final removedItem = allUserAlarms[index];
 
-    allUserAlarms.removeAt(index);
     listKey.currentState!.removeItem(
       index,
       (context, animation) => ListItemWidget(
@@ -254,8 +256,11 @@ class _HomePageState extends State<HomePage> {
       duration: const Duration(milliseconds: 500),
     );
 
+    //Check to see if deleting causes empty alamrs
+    // ignore: use_build_context_synchronously
+    context.read<AllAlarmsCubit>().checkIfAllisDeleted();
     //Remove from local DB
-    _alarmHelper.delete(alarmIDinDB);
+    _alarmHelper.delete(recordUrl);
     //REmove from firebase
     var collection = FirebaseFirestore.instance.collection('alarms');
     var snapshot =
@@ -473,79 +478,63 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.black12,
               ),
             ),
-            // const SizedBox(
-            //   height: 20,
-            // ),
-            // Row(
-            //   children: const [
-            //     Padding(
-            //       padding: EdgeInsets.only(left: 50.0),
-            //       child: Text('Your Alarms',
-            //           style: TextStyle(
-            //             color: Color(0xCC385A64),
-            //             fontFamily: 'Skranji',
-            //             fontSize: 20,
-            //             fontWeight: FontWeight.w600,
-            //           )),
-            //     ),
-            //   ],
-            // ),
-            // const SizedBox(
-            //   height: 20,
-            // ),
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            //   child: Container(
-            //     height: 0.7,
-            //     color: Colors.black12,
-            //   ),
-            // ),
-            FutureBuilder<List<AlarmInfo>?>(
-                future: loadAlarms(),
-                builder: (context, snapshot) {
-                  if (_allAlarms!.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 20.0),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 250.25,
-                            width: 200.5,
-                            child: Image.asset(
-                              "assets/images/empty.gif",
-                              height: 125.0,
-                              width: 125.0,
-                            ),
+            BlocBuilder<AllAlarmsCubit, AllAlarmsState>(
+              builder: (context, state) {
+                return state.when(
+                    initial: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    loaded: (List<dynamic> allAlarms) {
+                      allUserAlarms = allAlarms;
+
+                      if (allUserAlarms.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 20.0),
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 250.25,
+                                width: 200.5,
+                                child: Image.asset(
+                                  "assets/images/empty.gif",
+                                  height: 125.0,
+                                  width: 125.0,
+                                ),
+                              ),
+                              const Text('No alarms for you yet',
+                                  style: TextStyle(
+                                    color: Color(0xCC385A64),
+                                    fontFamily: 'Skranji',
+                                    fontSize: 18,
+                                  )),
+                            ],
                           ),
-                          const Text('No alarms for you yet',
-                              style: TextStyle(
-                                color: Color(0xCC385A64),
-                                fontFamily: 'Skranji',
-                                fontSize: 18,
-                              )),
-                        ],
-                      ),
-                    );
-                  } else {
-                    return Expanded(
-                      child: AnimatedList(
-                          key: listKey,
-                          initialItemCount: snapshot.data!.length,
-                          itemBuilder: (context, index, animation) {
-                            return ListItemWidget(
-                                item: snapshot.data![index],
-                                animation: animation,
-                                onClicked: () {
-                                  removeItem(
-                                      index,
-                                      snapshot.data![index].id,
-                                      snapshot.data![index].alarmDateTime,
-                                      snapshot.data![index].fileRef);
-                                });
-                          }),
-                    );
-                  }
-                }),
+                        );
+                      } else {
+                        return Expanded(
+                          child: AnimatedList(
+                              key: listKey,
+                              initialItemCount: allAlarms.length,
+                              itemBuilder: (context, index, animation) {
+                                return ListItemWidget(
+                                    item: allAlarms[index],
+                                    animation: animation,
+                                    onClicked: () {
+                                      removeItem(
+                                        index,
+                                        allAlarms[index]['RecordUrl'],
+                                      );
+                                    });
+                              }),
+                        );
+                      }
+                    },
+                    error: (String message) => Center(
+                          child: Text(message),
+                        ));
+              },
+            )
           ],
         ),
         const CreatedAlarms(),
@@ -558,7 +547,7 @@ class _HomePageState extends State<HomePage> {
 
 // ignore: must_be_immutable
 class ListItemWidget extends StatefulWidget {
-  final AlarmInfo item;
+  final Map<String, dynamic> item;
   final Animation<double> animation;
   final VoidCallback? onClicked;
   const ListItemWidget(
@@ -648,7 +637,9 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(widget.item.creator!,
+                                            child: Text(
+                                                widget
+                                                    .item['createdByUserName'],
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontFamily: 'Skranji',
@@ -664,7 +655,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                         ),
                                         child: Row(
                                           children: [
-                                            Text(widget.item.title!,
+                                            Text(widget.item['AlarmTitle'],
                                                 style: const TextStyle(
                                                   color: Color(0x991A1314),
                                                   fontFamily: 'Skranji',
@@ -725,9 +716,15 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                           // Optional onChange to receive value as DateTime
                                           onChangeDateTime:
                                               (DateTime dateTime) {
-                                            // print(dateTime);
+                                            print(dateTime);
                                             debugPrint(
                                                 "[debug datetime]:  $dateTime");
+                                            context
+                                                .read<EditTimeCubit>()
+                                                .changeTime(
+                                                    _time.hour,
+                                                    _time.minute,
+                                                    widget.item['RecordUrl']);
                                           },
                                         ),
                                       );
@@ -753,20 +750,49 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                       const EdgeInsets.only(left: 20.0, top: 5),
                                   child: Row(
                                     children: [
-                                      Text(
-                                          '${widget.item.hour} : ${widget.item.minute}',
-                                          style: const TextStyle(
-                                            color: Color(0xFF7689D6),
-                                            fontFamily: 'Skranji',
-                                            fontSize: 28,
-                                          )),
+                                      BlocBuilder<EditTimeCubit, EditTimeState>(
+                                        builder: (context, state) {
+                                          return state.when(
+                                              initial: () {
+                                                return Text(
+                                                    '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF7689D6),
+                                                      fontFamily: 'Skranji',
+                                                      fontSize: 28,
+                                                    ));
+                                              },
+                                              loading: () {
+                                                return Text(
+                                                    '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF7689D6),
+                                                      fontFamily: 'Skranji',
+                                                      fontSize: 28,
+                                                    ));
+                                              },
+                                              loaded: (hour, minute) {
+                                                return Text(
+                                                    '$hour : $minute ${hour > 12 ? 'PM' : 'AM'}',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF7689D6),
+                                                      fontFamily: 'Skranji',
+                                                      fontSize: 28,
+                                                    ));
+                                              },
+                                              error: ((message) =>
+                                                  Text(message)));
+                                        },
+                                      ),
                                       const SizedBox(
-                                        width: 4,
+                                        width: 8,
                                       ),
                                       Text(
                                           DateFormat('EEEE')
-                                              .format(
-                                                  widget.item.alarmDateTime!)
+                                              .format(DateTime.parse(widget
+                                                  .item['DateTime']
+                                                  .toDate()
+                                                  .toString()))
                                               .toString(),
                                           style: const TextStyle(
                                             color: Color(0xFF385A64),
@@ -786,7 +812,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                               child: Row(
                                 children: [
                                   Text(
-                                      '${widget.item.creator!} Created this alarm for you',
+                                      '${widget.item['createdByUserName']} Created this alarm for you',
                                       style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',

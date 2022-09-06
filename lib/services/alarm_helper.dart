@@ -11,6 +11,11 @@ const String columnCreator = 'creator';
 const String columnAudioPath = 'audioPath';
 const String columnfileRef = 'fileRef';
 
+const String tableAudioState = 'audioState';
+const String columnAudioId = 'idi';
+const String columnAudioConstName = 'constName';
+const String columnAudioState = 'state';
+
 class AlarmHelper {
   static Database? _database;
   static AlarmHelper? _alarmHelper;
@@ -39,8 +44,8 @@ class AlarmHelper {
     var database = await openDatabase(
       path,
       version: 1,
-      onCreate: (db, version) {
-        db.execute('''
+      onCreate: (db, version) async {
+        await db.execute('''
           create table $tableAlarm ( 
           $columnId integer primary key autoincrement, 
           $columnTitle text not null,
@@ -51,6 +56,12 @@ class AlarmHelper {
           $columnAudioPath text not null,
           $columnfileRef text not null)
         ''');
+        await db.execute('''
+          create table $tableAudioState ( 
+          $columnAudioId integer primary key autoincrement, 
+          $columnAudioConstName text not null,
+          $columnAudioState text not null)
+        ''');
       },
     );
     return database;
@@ -60,6 +71,12 @@ class AlarmHelper {
     var db = await this.database;
     var result = await db.insert(tableAlarm, alarmInfo.toMap());
     print('result IN ALARM HELPER : $result');
+  }
+
+  void insertAudioState(PlayerStating playerState) async {
+    var db = await this.database;
+    var result = await db.insert(tableAudioState, playerState.toMap());
+    print('result IN ALARM HELPER AUDIO STATE : $result');
   }
 
   Future<List<AlarmInfo>> getAlarms() async {
@@ -75,9 +92,29 @@ class AlarmHelper {
     return _alarms;
   }
 
-  Future<int> delete(int? id) async {
+  Future<List<PlayerStating>> getAudioState() async {
+    List<PlayerStating> _audioState = [];
+
     var db = await this.database;
-    return await db.delete(tableAlarm, where: '$columnId = ?', whereArgs: [id]);
+    var result = await db.query(tableAudioState);
+    result.forEach((element) {
+      var audioInfo = PlayerStating.fromMap(element);
+      _audioState.add(audioInfo);
+    });
+
+    return _audioState;
+  }
+
+  Future<int> deleteAudioState(String columname) async {
+    var db = await this.database;
+    return await db.delete(tableAudioState,
+        where: '$columnAudioConstName = ?', whereArgs: [columname]);
+  }
+
+  Future<int> delete(String? fileRef) async {
+    var db = await this.database;
+    return await db
+        .delete(tableAlarm, where: '$columnfileRef = ?', whereArgs: [fileRef]);
   }
 
   Future<bool> checkIfAlarmExists(fileRef) async {
@@ -90,6 +127,15 @@ class AlarmHelper {
     } else {
       return true;
     }
+  }
+
+  Future updateAudioState(String playAudio, String columname) async {
+    var db = await this.database;
+    await db.rawUpdate('''
+    UPDATE $tableAudioState 
+    SET $columnAudioState = ?
+    WHERE $columnAudioConstName = ?
+    ''', [playAudio, columname]);
   }
 
   Future updateAlarm(hour, minute, fileRef) async {
@@ -144,3 +190,32 @@ class AlarmInfo {
         "minute": minute,
       };
 }
+
+class PlayerStating {
+  int? idi;
+  String? constName;
+  String? state;
+
+  PlayerStating({
+    this.idi,
+    this.constName,
+    this.state,
+  });
+
+  factory PlayerStating.fromMap(Map<String, dynamic> json) => PlayerStating(
+        idi: json["idi"],
+        constName: json["constName"],
+        state: json["state"],
+      );
+  Map<String, dynamic> toMap() => {
+        "idi": idi,
+        "constName": constName,
+        "state": state,
+      };
+}
+
+
+
+// db.execute('CREATE TABLE $tableAlarm($columnId INTEGER PRIMARY KEY AUTOINCREMENT, $columnTitle TEXT, $columnDateTime TEXT, $columnHour INTEGER, $columnMinute INTEGER ,$columnCreator TEXT, $columnAudioPath TEXT, $columnfileRef TEXT)');
+//   db.execute('CREATE TABLE $database($columnAudioId INTEGER PRIMARY KEY, $columnAudioConstName TEXT, $columnAudioState TEXT )');
+   

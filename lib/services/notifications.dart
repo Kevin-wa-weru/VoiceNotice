@@ -6,11 +6,13 @@ class Notificationed {
   static Future _notificationDetails() async {
     return const NotificationDetails(
       android: AndroidNotificationDetails(
-          'channel id',
-          'channel name'
-              'channel description',
-          importance: Importance.max,
-          playSound: false),
+        'channel id',
+        'channel name'
+            'channel description',
+        importance: Importance.max,
+        playSound: false,
+        fullScreenIntent: true,
+      ),
       iOS: IOSNotificationDetails(),
     );
   }

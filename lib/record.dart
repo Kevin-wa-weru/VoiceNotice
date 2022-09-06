@@ -651,7 +651,7 @@ class _RecordingPageState extends State<RecordingPage> {
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
-                          'RecordUrl': audioUrl,
+                          'RecordUrl': 'karate.mp3',
                           'TargetUserid': userID,
                           'CreateByUserID': 'RBlD6eB8zVPhPvxz1czJkxi44Es1',
                           'createdByUserName': widget.user['userName'],
@@ -670,6 +670,7 @@ class _RecordingPageState extends State<RecordingPage> {
                               fontWeight: FontWeight.w500,
                               fontSize: 18),
                         ));
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
                         setState(() {
                           appisLoading = false;
