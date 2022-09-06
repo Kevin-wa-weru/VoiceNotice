@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
 
-part of 'edit_time_cubit.dart';
+part of 'create_alarms_cubit.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -15,12 +15,12 @@ final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
 /// @nodoc
-mixin _$EditTimeState {
+mixin _$CreateAlarmsState {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(int hour, int minute, String fileRef) loaded,
+    required TResult Function(List<dynamic> allAlarms) loaded,
     required TResult Function(String message) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -28,7 +28,7 @@ mixin _$EditTimeState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -36,7 +36,7 @@ mixin _$EditTimeState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) =>
@@ -69,20 +69,20 @@ mixin _$EditTimeState {
 }
 
 /// @nodoc
-abstract class $EditTimeStateCopyWith<$Res> {
-  factory $EditTimeStateCopyWith(
-          EditTimeState value, $Res Function(EditTimeState) then) =
-      _$EditTimeStateCopyWithImpl<$Res>;
+abstract class $CreateAlarmsStateCopyWith<$Res> {
+  factory $CreateAlarmsStateCopyWith(
+          CreateAlarmsState value, $Res Function(CreateAlarmsState) then) =
+      _$CreateAlarmsStateCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class _$EditTimeStateCopyWithImpl<$Res>
-    implements $EditTimeStateCopyWith<$Res> {
-  _$EditTimeStateCopyWithImpl(this._value, this._then);
+class _$CreateAlarmsStateCopyWithImpl<$Res>
+    implements $CreateAlarmsStateCopyWith<$Res> {
+  _$CreateAlarmsStateCopyWithImpl(this._value, this._then);
 
-  final EditTimeState _value;
+  final CreateAlarmsState _value;
   // ignore: unused_field
-  final $Res Function(EditTimeState) _then;
+  final $Res Function(CreateAlarmsState) _then;
 }
 
 /// @nodoc
@@ -93,7 +93,8 @@ abstract class _$$_InitialCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$_InitialCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
+class __$$_InitialCopyWithImpl<$Res>
+    extends _$CreateAlarmsStateCopyWithImpl<$Res>
     implements _$$_InitialCopyWith<$Res> {
   __$$_InitialCopyWithImpl(_$_Initial _value, $Res Function(_$_Initial) _then)
       : super(_value, (v) => _then(v as _$_Initial));
@@ -109,7 +110,7 @@ class _$_Initial implements _Initial {
 
   @override
   String toString() {
-    return 'EditTimeState.initial()';
+    return 'CreateAlarmsState.initial()';
   }
 
   @override
@@ -126,7 +127,7 @@ class _$_Initial implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(int hour, int minute, String fileRef) loaded,
+    required TResult Function(List<dynamic> allAlarms) loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -137,7 +138,7 @@ class _$_Initial implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
   }) {
     return initial?.call();
@@ -148,7 +149,7 @@ class _$_Initial implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -196,7 +197,7 @@ class _$_Initial implements _Initial {
   }
 }
 
-abstract class _Initial implements EditTimeState {
+abstract class _Initial implements CreateAlarmsState {
   const factory _Initial() = _$_Initial;
 }
 
@@ -208,7 +209,8 @@ abstract class _$$_LoadingCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$_LoadingCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
+class __$$_LoadingCopyWithImpl<$Res>
+    extends _$CreateAlarmsStateCopyWithImpl<$Res>
     implements _$$_LoadingCopyWith<$Res> {
   __$$_LoadingCopyWithImpl(_$_Loading _value, $Res Function(_$_Loading) _then)
       : super(_value, (v) => _then(v as _$_Loading));
@@ -224,7 +226,7 @@ class _$_Loading implements _Loading {
 
   @override
   String toString() {
-    return 'EditTimeState.loading()';
+    return 'CreateAlarmsState.loading()';
   }
 
   @override
@@ -241,7 +243,7 @@ class _$_Loading implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(int hour, int minute, String fileRef) loaded,
+    required TResult Function(List<dynamic> allAlarms) loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -252,7 +254,7 @@ class _$_Loading implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
   }) {
     return loading?.call();
@@ -263,7 +265,7 @@ class _$_Loading implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -311,7 +313,7 @@ class _$_Loading implements _Loading {
   }
 }
 
-abstract class _Loading implements EditTimeState {
+abstract class _Loading implements CreateAlarmsState {
   const factory _Loading() = _$_Loading;
 }
 
@@ -319,11 +321,12 @@ abstract class _Loading implements EditTimeState {
 abstract class _$$_LoadedCopyWith<$Res> {
   factory _$$_LoadedCopyWith(_$_Loaded value, $Res Function(_$_Loaded) then) =
       __$$_LoadedCopyWithImpl<$Res>;
-  $Res call({int hour, int minute, String fileRef});
+  $Res call({List<dynamic> allAlarms});
 }
 
 /// @nodoc
-class __$$_LoadedCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
+class __$$_LoadedCopyWithImpl<$Res>
+    extends _$CreateAlarmsStateCopyWithImpl<$Res>
     implements _$$_LoadedCopyWith<$Res> {
   __$$_LoadedCopyWithImpl(_$_Loaded _value, $Res Function(_$_Loaded) _then)
       : super(_value, (v) => _then(v as _$_Loaded));
@@ -333,23 +336,13 @@ class __$$_LoadedCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
 
   @override
   $Res call({
-    Object? hour = freezed,
-    Object? minute = freezed,
-    Object? fileRef = freezed,
+    Object? allAlarms = freezed,
   }) {
     return _then(_$_Loaded(
-      hour == freezed
-          ? _value.hour
-          : hour // ignore: cast_nullable_to_non_nullable
-              as int,
-      minute == freezed
-          ? _value.minute
-          : minute // ignore: cast_nullable_to_non_nullable
-              as int,
-      fileRef == freezed
-          ? _value.fileRef
-          : fileRef // ignore: cast_nullable_to_non_nullable
-              as String,
+      allAlarms == freezed
+          ? _value._allAlarms
+          : allAlarms // ignore: cast_nullable_to_non_nullable
+              as List<dynamic>,
     ));
   }
 }
@@ -357,18 +350,18 @@ class __$$_LoadedCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
 /// @nodoc
 
 class _$_Loaded implements _Loaded {
-  const _$_Loaded(this.hour, this.minute, this.fileRef);
+  const _$_Loaded(final List<dynamic> allAlarms) : _allAlarms = allAlarms;
 
+  final List<dynamic> _allAlarms;
   @override
-  final int hour;
-  @override
-  final int minute;
-  @override
-  final String fileRef;
+  List<dynamic> get allAlarms {
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_allAlarms);
+  }
 
   @override
   String toString() {
-    return 'EditTimeState.loaded(hour: $hour, minute: $minute, fileRef: $fileRef)';
+    return 'CreateAlarmsState.loaded(allAlarms: $allAlarms)';
   }
 
   @override
@@ -376,17 +369,13 @@ class _$_Loaded implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_Loaded &&
-            const DeepCollectionEquality().equals(other.hour, hour) &&
-            const DeepCollectionEquality().equals(other.minute, minute) &&
-            const DeepCollectionEquality().equals(other.fileRef, fileRef));
+            const DeepCollectionEquality()
+                .equals(other._allAlarms, _allAlarms));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(hour),
-      const DeepCollectionEquality().hash(minute),
-      const DeepCollectionEquality().hash(fileRef));
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_allAlarms));
 
   @JsonKey(ignore: true)
   @override
@@ -398,10 +387,10 @@ class _$_Loaded implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(int hour, int minute, String fileRef) loaded,
+    required TResult Function(List<dynamic> allAlarms) loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(hour, minute, fileRef);
+    return loaded(allAlarms);
   }
 
   @override
@@ -409,10 +398,10 @@ class _$_Loaded implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
   }) {
-    return loaded?.call(hour, minute, fileRef);
+    return loaded?.call(allAlarms);
   }
 
   @override
@@ -420,12 +409,12 @@ class _$_Loaded implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(hour, minute, fileRef);
+      return loaded(allAlarms);
     }
     return orElse();
   }
@@ -468,13 +457,10 @@ class _$_Loaded implements _Loaded {
   }
 }
 
-abstract class _Loaded implements EditTimeState {
-  const factory _Loaded(
-      final int hour, final int minute, final String fileRef) = _$_Loaded;
+abstract class _Loaded implements CreateAlarmsState {
+  const factory _Loaded(final List<dynamic> allAlarms) = _$_Loaded;
 
-  int get hour;
-  int get minute;
-  String get fileRef;
+  List<dynamic> get allAlarms;
   @JsonKey(ignore: true)
   _$$_LoadedCopyWith<_$_Loaded> get copyWith =>
       throw _privateConstructorUsedError;
@@ -488,7 +474,7 @@ abstract class _$$_ErrorCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$_ErrorCopyWithImpl<$Res> extends _$EditTimeStateCopyWithImpl<$Res>
+class __$$_ErrorCopyWithImpl<$Res> extends _$CreateAlarmsStateCopyWithImpl<$Res>
     implements _$$_ErrorCopyWith<$Res> {
   __$$_ErrorCopyWithImpl(_$_Error _value, $Res Function(_$_Error) _then)
       : super(_value, (v) => _then(v as _$_Error));
@@ -519,7 +505,7 @@ class _$_Error implements _Error {
 
   @override
   String toString() {
-    return 'EditTimeState.error(message: $message)';
+    return 'CreateAlarmsState.error(message: $message)';
   }
 
   @override
@@ -544,7 +530,7 @@ class _$_Error implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(int hour, int minute, String fileRef) loaded,
+    required TResult Function(List<dynamic> allAlarms) loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -555,7 +541,7 @@ class _$_Error implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
   }) {
     return error?.call(message);
@@ -566,7 +552,7 @@ class _$_Error implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(int hour, int minute, String fileRef)? loaded,
+    TResult Function(List<dynamic> allAlarms)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -614,7 +600,7 @@ class _$_Error implements _Error {
   }
 }
 
-abstract class _Error implements EditTimeState {
+abstract class _Error implements CreateAlarmsState {
   const factory _Error(final String message) = _$_Error;
 
   String get message;

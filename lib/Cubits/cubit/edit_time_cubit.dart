@@ -59,6 +59,6 @@ class EditTimeCubit extends Cubit<EditTimeState> {
     await alarmRef.doc(docRef).update({'DateTime': newDateofAlarm});
 
     print('FINISHED UPDATING ALARM TIME');
-    emit(EditTimeState.loaded(hour, minute));
+    emit(EditTimeState.loaded(hour, minute, fileRef));
   }
 }

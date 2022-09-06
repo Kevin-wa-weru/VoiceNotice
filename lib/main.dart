@@ -10,8 +10,8 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:voicenotice/Cubits/mainscreen.dart';
 import 'package:voicenotice/homepage.dart';
-import 'package:voicenotice/mainscreen.dart';
 import 'package:voicenotice/models/user_credentials.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicenotice/onboarding.dart';
@@ -136,7 +136,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(minutes: 20), (timer) async {
+  Timer.periodic(const Duration(minutes: 60), (timer) async {
     if (service is AndroidServiceInstance) {
       service.setForegroundNotificationInfo(
         title: "My App Service",

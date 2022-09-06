@@ -140,6 +140,7 @@ class _HomePageState extends State<HomePage> {
     play.stopBackgroundAudio();
     _askContactsPermissions('');
     getContactsWithPermission();
+
     context.read<AllAlarmsCubit>().getAllUSeralarms();
     print(allUserAlarms);
   }
@@ -771,14 +772,27 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                                       fontSize: 28,
                                                     ));
                                               },
-                                              loaded: (hour, minute) {
-                                                return Text(
-                                                    '$hour : $minute ${hour > 12 ? 'PM' : 'AM'}',
-                                                    style: const TextStyle(
-                                                      color: Color(0xFF7689D6),
-                                                      fontFamily: 'Skranji',
-                                                      fontSize: 28,
-                                                    ));
+                                              loaded: (hour, minute, fileRef) {
+                                                if (fileRef ==
+                                                    widget.item['RecordUrl']) {
+                                                  return Text(
+                                                      '$hour : $minute ${hour > 12 ? 'PM' : 'AM'}',
+                                                      style: const TextStyle(
+                                                        color:
+                                                            Color(0xFF7689D6),
+                                                        fontFamily: 'Skranji',
+                                                        fontSize: 28,
+                                                      ));
+                                                } else {
+                                                  return Text(
+                                                      '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
+                                                      style: const TextStyle(
+                                                        color:
+                                                            Color(0xFF7689D6),
+                                                        fontFamily: 'Skranji',
+                                                        fontSize: 28,
+                                                      ));
+                                                }
                                               },
                                               error: ((message) =>
                                                   Text(message)));

@@ -4,6 +4,7 @@ part of 'edit_time_cubit.dart';
 class EditTimeState with _$EditTimeState {
   const factory EditTimeState.initial() = _Initial;
   const factory EditTimeState.loading() = _Loading;
-  const factory EditTimeState.loaded(int hour, int minute) = _Loaded;
+  const factory EditTimeState.loaded(int hour, int minute, String fileRef) =
+      _Loaded;
   const factory EditTimeState.error(String message) = _Error;
 }

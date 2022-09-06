@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/create_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/homepage.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -17,10 +18,13 @@ class _MainScreenState extends State<MainScreen> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => AllAlarmsCubit(),
+          create: (_) => AllAlarmsCubit(),
         ),
         BlocProvider(
-          create: (context) => EditTimeCubit(),
+          create: (_) => EditTimeCubit(),
+        ),
+        BlocProvider(
+          create: (_) => CreateAlarmsCubit(),
         ),
       ],
       child: const HomePage(),

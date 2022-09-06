@@ -8,9 +8,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:day_night_time_picker/lib/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
 import 'package:voicenotice/services/audio_player.dart';
 import 'package:voicenotice/services/audio_recorder.dart';
 import 'package:flutter_holo_date_picker/flutter_holo_date_picker.dart';
@@ -641,24 +643,26 @@ class _RecordingPageState extends State<RecordingPage> {
                             .where('phone', isEqualTo: widget.user['phone'])
                             .get();
 
-                        var userID = await snapshot.docs.first.id;
+                        var userID = snapshot.docs.first.id;
 
                         //  final FirebaseAuth auth = FirebaseAuth.instance;
                         // final User? user = auth.currentUser;
                         // final uid = user!.uid;
+                        // firebaseAuth.currentUser!.displayName;
+                        // firebaseAuth.currentUser!.phoneNumber;
 
                         await alarmRef.add({
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
                           'RecordUrl': 'karate.mp3',
+                          'CreateByUserID':
+                              'RBlD6eB8zVPhPvxz1czJkxi44Es1', // TO CHANGE
+                          'createdByUserName': 'Alex', // TO CHANGE
+                          'createdByPhoneNUmber': '+254748189678', // TO CHANGE
                           'TargetUserid': userID,
-                          'CreateByUserID': 'RBlD6eB8zVPhPvxz1czJkxi44Es1',
-                          'createdByUserName': widget.user['userName'],
-                          //   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-                          // firebaseAuth.currentUser!.displayName!;
-                          'createdByPhoneNUmber': widget.user['phone'],
-                          // firebaseAuth.currentUser!.phoneNumber!;
+                          "createdForUserName": widget.user['userName'],
+                          'createdForPhoneNUmber': widget.user['phone'],
                         });
 
                         var snackBar = const SnackBar(
