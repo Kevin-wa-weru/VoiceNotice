@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
-import 'package:voicenotice/Cubits/cubit/create_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
@@ -31,32 +30,18 @@ class _HomePageState extends State<HomePage> {
   final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
 
-  getContactsWithPermission() async {
+  getPhonesWithPermission() async {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
-    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
 
     var userData = await FirebaseFirestore.instance
         .collection("users")
-        .doc(user!.uid)
+        .where('canCreate', arrayContains: user!.phoneNumber)
         .get();
+    // late List allContactsThatGavePermission = [];
 
-    List userWithPermissionPhones = userData.data()!['canCreate'];
-
-    //Then get all users info with permission
-
-    List tempHolder = [];
-
-    for (var user in userWithPermissionPhones) {
-      var response = await FirebaseFirestore.instance
-          .collection("users")
-          .where('phone', isEqualTo: user)
-          .get();
-      tempHolder.add(response.docs);
-    }
-
-    for (var user in tempHolder) {
-      usersWithPermission!.add(user[0].data());
+    for (var user in userData.docs) {
+      usersWithPermission!.add(user.data());
     }
   }
 
@@ -147,7 +132,7 @@ class _HomePageState extends State<HomePage> {
     AlarmHelper alarmHelper = AlarmHelper();
     alarmHelper.updateAudioState('NO', 'PANAMA');
     _askContactsPermissions('');
-    getContactsWithPermission();
+    getPhonesWithPermission();
 
     context.read<AllAlarmsCubit>().getAllUSeralarms();
   }

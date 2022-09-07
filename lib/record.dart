@@ -655,7 +655,7 @@ class _RecordingPageState extends State<RecordingPage> {
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
-                          'RecordUrl': audioUrl,
+                          'RecordUrl': 'karate.mp3',
                           'CreateByUserID': user!.uid,
                           'createdByUserName': user.displayName,
                           'createdByPhoneNUmber': user.phoneNumber,
