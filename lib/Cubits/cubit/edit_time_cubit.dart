@@ -13,7 +13,6 @@ class EditTimeCubit extends Cubit<EditTimeState> {
   late int minute = 0;
 
   changeTime(int hour, int minute, fileRef) async {
-    print('STARTED UPDATING ALARM TIME');
     emit(const EditTimeState.loading());
     await Firebase.initializeApp();
 
@@ -29,9 +28,6 @@ class EditTimeCubit extends Cubit<EditTimeState> {
       alarmInfo.add(snapshot.docs.first.data());
       return snapshot.docs[0].id;
     });
-
-    print('THISS  $alarmInfo');
-    print('THIS $docRef');
 
     DateTime dateOfAlarm =
         DateTime.parse(alarmInfo.first['DateTime'].toDate().toString());
@@ -58,7 +54,6 @@ class EditTimeCubit extends Cubit<EditTimeState> {
 
     await alarmRef.doc(docRef).update({'DateTime': newDateofAlarm});
 
-    print('FINISHED UPDATING ALARM TIME');
     emit(EditTimeState.loaded(hour, minute, fileRef));
   }
 }

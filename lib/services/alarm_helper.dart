@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String tableAlarm = 'alarm';
@@ -15,6 +16,10 @@ const String tableAudioState = 'audioState';
 const String columnAudioId = 'idi';
 const String columnAudioConstName = 'constName';
 const String columnAudioState = 'state';
+
+const String tableUserName = 'userName';
+const String columnUserid = 'idii';
+const String columnUserNameID = 'userID';
 
 class AlarmHelper {
   static Database? _database;
@@ -62,62 +67,97 @@ class AlarmHelper {
           $columnAudioConstName text not null,
           $columnAudioState text not null)
         ''');
+        await db.execute('''
+          create table $tableUserName ( 
+          $columnUserid integer primary key, 
+          $columnUserNameID text not null)
+        ''');
       },
     );
     return database;
   }
 
+  void insertUserName(UserName userInfo) async {
+    // ignore: unnecessary_this
+    var db = await this.database;
+    await db.insert(tableUserName, userInfo.toMap());
+  }
+
   void insertAlarm(AlarmInfo alarmInfo) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     var result = await db.insert(tableAlarm, alarmInfo.toMap());
-    print('result IN ALARM HELPER : $result');
+    debugPrint('result IN ALARM HELPER : $result');
   }
 
   void insertAudioState(PlayerStating playerState) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     var result = await db.insert(tableAudioState, playerState.toMap());
-    print('result IN ALARM HELPER AUDIO STATE : $result');
+    debugPrint('result IN ALARM HELPER AUDIO STATE : $result');
   }
 
   Future<List<AlarmInfo>> getAlarms() async {
-    List<AlarmInfo> _alarms = [];
+    List<AlarmInfo> alarms = [];
 
+    // ignore: unnecessary_this
     var db = await this.database;
     var result = await db.query(tableAlarm);
+    // ignore: avoid_function_literals_in_foreach_calls
     result.forEach((element) {
       var alarmInfo = AlarmInfo.fromMap(element);
-      _alarms.add(alarmInfo);
+      alarms.add(alarmInfo);
     });
 
-    return _alarms;
+    return alarms;
   }
 
   Future<List<PlayerStating>> getAudioState() async {
-    List<PlayerStating> _audioState = [];
+    List<PlayerStating> audioState = [];
 
+    // ignore: unnecessary_this
     var db = await this.database;
     var result = await db.query(tableAudioState);
+    // ignore: avoid_function_literals_in_foreach_calls
     result.forEach((element) {
       var audioInfo = PlayerStating.fromMap(element);
-      _audioState.add(audioInfo);
+      audioState.add(audioInfo);
     });
 
-    return _audioState;
+    return audioState;
+  }
+
+  Future<List<UserName>> getUserName() async {
+    List<UserName> userINFOMATION = [];
+
+    // ignore: unnecessary_this
+    var db = await this.database;
+    var result = await db.query(tableUserName);
+    // ignore: avoid_function_literals_in_foreach_calls
+    result.forEach((element) {
+      var userNameInfo = UserName.fromMap(element);
+      userINFOMATION.add(userNameInfo);
+    });
+
+    return userINFOMATION;
   }
 
   Future<int> deleteAudioState(String columname) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     return await db.delete(tableAudioState,
         where: '$columnAudioConstName = ?', whereArgs: [columname]);
   }
 
   Future<int> delete(String? fileRef) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     return await db
         .delete(tableAlarm, where: '$columnfileRef = ?', whereArgs: [fileRef]);
   }
 
   Future<bool> checkIfAlarmExists(fileRef) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     var queryResult = await db
         .rawQuery('SELECT * FROM $tableAlarm WHERE $columnfileRef="$fileRef"');
@@ -130,6 +170,7 @@ class AlarmHelper {
   }
 
   Future updateAudioState(String playAudio, String columname) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     await db.rawUpdate('''
     UPDATE $tableAudioState 
@@ -139,6 +180,7 @@ class AlarmHelper {
   }
 
   Future updateAlarm(hour, minute, fileRef) async {
+    // ignore: unnecessary_this
     var db = await this.database;
     await db.rawUpdate('''
     UPDATE $tableAlarm 
@@ -211,6 +253,25 @@ class PlayerStating {
         "idi": idi,
         "constName": constName,
         "state": state,
+      };
+}
+
+class UserName {
+  int? idi;
+  String? userID;
+
+  UserName({
+    this.idi,
+    this.userID,
+  });
+
+  factory UserName.fromMap(Map<String, dynamic> json) => UserName(
+        idi: json["idii"],
+        userID: json["userID"],
+      );
+  Map<String, dynamic> toMap() => {
+        "idii": userID,
+        "userID": userID,
       };
 }
 

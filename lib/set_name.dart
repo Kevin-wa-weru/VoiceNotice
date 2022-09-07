@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:voicenotice/homepage.dart';
-import 'package:voicenotice/models/user_credentials.dart';
-import 'package:voicenotice/services/hive.dart';
 
 class SetName extends StatefulWidget {
   const SetName({Key? key, this.userid, this.phoneNumber}) : super(key: key);
@@ -52,7 +50,7 @@ class _SetNameState extends State<SetName> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                     fontFamily: 'Skranji', fontWeight: FontWeight.w600),
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.name,
                 decoration: InputDecoration(
                   fillColor: const Color(0xFFF5F5F5),
                   border: OutlineInputBorder(
@@ -120,21 +118,6 @@ class _SetNameState extends State<SetName> {
                 //update username in authenticated users
                 FirebaseAuth.instance.currentUser!
                     .updateDisplayName(nameController.text);
-
-                //persist to hive
-
-                final userdetails = UserReg()
-                  ..phone = widget.phoneNumber!
-                  ..userid = widget.userid!
-                  ..username = nameController.text;
-
-                final box = Boxes.getAccount();
-
-                if (box.isEmpty) {
-                  box.add(userdetails);
-                } else {
-                  box.putAt(0, userdetails);
-                }
 
                 //update firebase doc to add username
                 final CollectionReference usersRef =

@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
@@ -15,10 +16,14 @@ class AllAlarmsCubit extends Cubit<AllAlarmsState> {
   getAllUSeralarms() async {
     emit(const AllAlarmsState.loading());
     await Firebase.initializeApp();
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+
     var response = await FirebaseFirestore.instance
         .collection("alarms")
-        .where('TargetUserid', isEqualTo: testUser)
+        .where('TargetUserid', isEqualTo: user!.uid)
         .get();
 
     if (response.docs.isEmpty) {
@@ -41,8 +46,8 @@ class AllAlarmsCubit extends Cubit<AllAlarmsState> {
   checkIfAllisDeleted() {
     final AlarmHelper alarmHelper = AlarmHelper();
     alarmHelper.initializeDatabase().then((value) async {
-      List USeralarms = await alarmHelper.getAlarms();
-      if (USeralarms.isEmpty) {
+      List uSeralarms = await alarmHelper.getAlarms();
+      if (uSeralarms.isEmpty) {
         emit(const AllAlarmsState.loaded([]));
       } else {
         //do nothing

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 
 class Country {
@@ -23,7 +24,7 @@ class Network {
   Network(this.url);
 
   Future<String> apiRequest(Map jsonMap) async {
-    HttpClient httpClient = new HttpClient();
+    HttpClient httpClient = HttpClient();
     HttpClientRequest request = await httpClient.postUrl(Uri.parse(url));
     request.headers.set('content-type', 'application/x-www-form-urlencoded');
     request.add(utf8.encode(json.encode(jsonMap)));

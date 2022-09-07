@@ -31,12 +31,18 @@ class _VerifyNumberState extends State<VerifyNumber> {
   Future _verifyPhoneNumber() async {
     auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential phoneAuthCredential) async {},
-      verificationFailed: (FirebaseAuthException verificationFailed) async {},
+      verificationCompleted: (PhoneAuthCredential phoneAuthCredential) async {
+        debugPrint('Verification sent');
+      },
+      verificationFailed: (FirebaseAuthException verificationFailed) async {
+        debugPrint('Verification has failed');
+      },
       codeSent: (verificationId, forceResendingToken) async {
         setState(() {
           verificationID = verificationId;
         });
+        debugPrint('CODE::::::::::::::');
+        debugPrint(verificationId.toString());
       },
       codeAutoRetrievalTimeout: (verificationId) async {},
     );
@@ -56,9 +62,9 @@ class _VerifyNumberState extends State<VerifyNumber> {
             await usersRef.doc(value.user!.uid).set({
               'userid': value.user!.uid,
               'phone': phoneNumber,
-              'canCreate': [],
-              'canDelete': [],
-              'canEdit': [],
+              'canCreate': [phoneNumber],
+              'canDelete': [phoneNumber],
+              'canEdit': [phoneNumber],
             });
 
             // ignore: use_build_context_synchronously

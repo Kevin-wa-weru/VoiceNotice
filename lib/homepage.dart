@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:day_night_time_picker/lib/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,6 @@ import 'package:voicenotice/created_alarms.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/record.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
-import 'package:voicenotice/services/background_audio.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -31,19 +31,16 @@ class _HomePageState extends State<HomePage> {
   List? usersWithPermission = [];
 
   getContactsWithPermission() async {
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
 
     var userData = await FirebaseFirestore.instance
         .collection("users")
-        .doc(testUser)
+        .doc(user!.uid)
         .get();
 
-    print(userData.data());
-
     List userWithPermissionPhones = userData.data()!['canCreate'];
-
-    print('userWithPermissionIDS');
-    print(userWithPermissionPhones);
 
     //Then get all users info with permission
 
@@ -57,20 +54,14 @@ class _HomePageState extends State<HomePage> {
       tempHolder.add(response.docs);
     }
 
-    print('Temp Holder: $tempHolder');
-
     for (var user in tempHolder) {
       usersWithPermission!.add(user[0].data());
     }
-
-    print('usersWithPermission');
-    print(usersWithPermission);
   }
 
   Future<void> _askContactsPermissions(String routeName) async {
     PermissionStatus permissionStatus = await _getContactPermission();
     if (permissionStatus == PermissionStatus.granted) {
-      print('Permision given');
       await _getStoragePermission();
     } else {
       _handleInvalidPermissions(permissionStatus);
@@ -100,6 +91,7 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.w500,
             fontSize: 18),
       ));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
     } else if (permissionStatus == PermissionStatus.permanentlyDenied) {
       var snackBar = const SnackBar(
           content: Text(
@@ -128,21 +120,35 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.w500,
             fontSize: 18),
       ));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
+  }
+
+  late String userName = '';
+
+  getUserName() async {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+
+    var collection = FirebaseFirestore.instance.collection('users');
+    var snapshot = await collection.where('userid', isEqualTo: user!.uid).get();
+
+    var name = await snapshot.docs.first.data()['userName'];
+
+    userName = name;
   }
 
   @override
   void initState() {
     super.initState();
 
-    final play = BackgroundAudio();
-
-    play.stopBackgroundAudio();
+    getUserName();
+    AlarmHelper alarmHelper = AlarmHelper();
+    alarmHelper.updateAudioState('NO', 'PANAMA');
     _askContactsPermissions('');
     getContactsWithPermission();
 
     context.read<AllAlarmsCubit>().getAllUSeralarms();
-    print(allUserAlarms);
   }
 
   void modalBottomSheetMenu() {
@@ -238,9 +244,6 @@ class _HomePageState extends State<HomePage> {
   final listKey = GlobalKey<AnimatedListState>();
 
   void removeItem(int index, recordUrl) async {
-    print(allUserAlarms);
-    print(index);
-    print(recordUrl);
     final player = AudioPlayer();
 
     await player.play(AssetSource('delete.wav'));
@@ -271,277 +274,318 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF7689D6),
-        onPressed: () {
-          modalBottomSheetMenu();
-        },
-        child: SizedBox(
-          height: 20,
-          width: 20,
-          child: SvgPicture.asset('assets/icons/add.svg',
-              color: Colors.white, fit: BoxFit.fitHeight),
-        ),
-      ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 10),
-              child: Builder(
-                builder: (context) => IconButton(
-                  icon: SvgPicture.asset(
-                    "assets/icons/drawer.svg",
-                    height: 15,
-                    width: 34,
-                  ),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
+    return BlocConsumer<AllAlarmsCubit, AllAlarmsState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        return Scaffold(
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: const Color(0xFF7689D6),
+            onPressed: () {
+              modalBottomSheetMenu();
+            },
+            child: SizedBox(
+              height: 20,
+              width: 20,
+              child: SvgPicture.asset('assets/icons/add.svg',
+                  color: Colors.white, fit: BoxFit.fitHeight),
             ),
-            const Text('VOICE NOTICE',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontFamily: 'Skranji',
-                  fontSize: 25,
-                )),
-          ],
-        ),
-        backgroundColor: currentIndex == 3
-            ? const Color(0xffF9F9F9)
-            : const Color(0xffF9F9F9),
-        elevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
-      ),
-      drawer: SizedBox(
-        width: MediaQuery.of(context).size.width / 1.25,
-        child: Drawer(
-          backgroundColor: const Color(0xffF9F9F9),
-          child: Column(
-            children: <Widget>[
-              const SizedBox(
-                height: 30,
-              ),
-              DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Colors.transparent,
-                ),
-                child: SizedBox(
-                  height: 400.25,
-                  width: 400.5,
-                  child: SvgPicture.asset('assets/images/img13.svg',
-                      fit: BoxFit.fitHeight),
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    currentIndex = 0;
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  'My Alarms',
-                  style: TextStyle(
-                    color: Color(0xCC385A64),
-                    fontFamily: 'Skranji',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(
-                height: 45,
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    currentIndex = 1;
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  'Created Alarms',
-                  style: TextStyle(
-                    color: Color(0xCC385A64),
-                    fontFamily: 'Skranji',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(
-                height: 45,
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    currentIndex = 2;
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  'Permissions',
-                  style: TextStyle(
-                    color: Color(0xCC385A64),
-                    fontFamily: 'Skranji',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(
-                height: 45,
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return const OnboardingScreen();
-                  }));
-                },
-                child: const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    color: Color(0xCC385A64),
-                    fontFamily: 'Skranji',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(
-                height: 45,
-              ),
-              Material(
-                borderRadius: BorderRadius.circular(500),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(500),
-                  splashColor: const Color(0xCC385A64),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Color(0xCC385A64),
-                    child: Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Builder(
+                    builder: (context) => IconButton(
+                      icon: SvgPicture.asset(
+                        "assets/icons/drawer.svg",
+                        height: 15,
+                        width: 34,
+                      ),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                  child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  height: 65,
-                  width: MediaQuery.of(context).size.width,
-                  color: const Color(0xCC385A64),
-                  child: const Center(
-                    child: Text(
-                      'Voice Notice v1.0.1',
+                const Text('VOICE NOTICE',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontFamily: 'Skranji',
+                      fontSize: 25,
+                    )),
+              ],
+            ),
+            backgroundColor: currentIndex == 3
+                ? const Color(0xffF9F9F9)
+                : const Color(0xffF9F9F9),
+            elevation: 0,
+            centerTitle: false,
+            titleSpacing: 0,
+          ),
+          drawer: SizedBox(
+            width: MediaQuery.of(context).size.width / 1.25,
+            child: Drawer(
+              backgroundColor: const Color(0xffF9F9F9),
+              child: Column(
+                children: <Widget>[
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  DrawerHeader(
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
+                    ),
+                    child: SizedBox(
+                      height: 400.25,
+                      width: 400.5,
+                      child: SvgPicture.asset('assets/images/img13.svg',
+                          fit: BoxFit.fitHeight),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentIndex = 0;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'My Alarms',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xCC385A64),
                         fontFamily: 'Skranji',
-                        fontSize: 18,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                ),
-              ))
-            ],
-          ),
-        ),
-      ),
-      body: <Widget>[
-        Column(
-          children: [
-            const SizedBox(
-              height: 10,
-            ),
-            const TopBanner(),
-            const SizedBox(
-              height: 20,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 50.0),
-              child: Container(
-                height: 0.7,
-                color: Colors.black12,
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentIndex = 1;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Created Alarms',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentIndex = 2;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Permissions',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      final snackBar = SnackBar(
+                        duration: const Duration(seconds: 5),
+                        content: const Text(
+                          'You sure you want to logout?',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Skranji',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18),
+                        ),
+                        action: SnackBarAction(
+                          label: 'Proceed',
+                          textColor: const Color(0xFF7689D6),
+                          onPressed: () {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                              return const OnboardingScreen();
+                            }));
+                          },
+                        ),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    },
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  Material(
+                    borderRadius: BorderRadius.circular(500),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(500),
+                      splashColor: const Color(0xCC385A64),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xCC385A64),
+                        child: Icon(Icons.arrow_back, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                      child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      height: 65,
+                      width: MediaQuery.of(context).size.width,
+                      color: const Color(0xCC385A64),
+                      child: const Center(
+                        child: Text(
+                          'Voice Notice v1.0.1',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Skranji',
+                            fontSize: 18,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ))
+                ],
               ),
             ),
-            BlocBuilder<AllAlarmsCubit, AllAlarmsState>(
-              builder: (context, state) {
-                return state.when(
-                    initial: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    loaded: (List<dynamic> allAlarms) {
-                      allUserAlarms = allAlarms;
+          ),
+          body: <Widget>[
+            Column(
+              children: [
+                const SizedBox(
+                  height: 10,
+                ),
+                TopBanner(userName: userName),
+                const SizedBox(
+                  height: 20,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                  child: Container(
+                    height: 0.7,
+                    color: Colors.black12,
+                  ),
+                ),
+                BlocBuilder<AllAlarmsCubit, AllAlarmsState>(
+                  builder: (context, state) {
+                    return state.when(
+                        initial: () => Column(
+                              children: const [
+                                SizedBox(height: 100),
+                                Center(
+                                    child: CircularProgressIndicator(
+                                  color: Color(0xCC385A64),
+                                  strokeWidth: 5,
+                                )),
+                              ],
+                            ),
+                        loading: () => Column(
+                              children: const [
+                                SizedBox(height: 100),
+                                Center(
+                                    child: CircularProgressIndicator(
+                                  color: Color(0xCC385A64),
+                                  strokeWidth: 5,
+                                )),
+                              ],
+                            ),
+                        loaded: (List<dynamic> allAlarms) {
+                          allUserAlarms = allAlarms;
 
-                      if (allUserAlarms.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 20.0),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: 250.25,
-                                width: 200.5,
-                                child: Image.asset(
-                                  "assets/images/empty.gif",
-                                  height: 125.0,
-                                  width: 125.0,
-                                ),
+                          if (allUserAlarms.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 20.0),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: 250.25,
+                                    width: 200.5,
+                                    child: Image.asset(
+                                      "assets/images/empty.gif",
+                                      height: 125.0,
+                                      width: 125.0,
+                                    ),
+                                  ),
+                                  const Text('No alarms for you yet',
+                                      style: TextStyle(
+                                        color: Color(0xCC385A64),
+                                        fontFamily: 'Skranji',
+                                        fontSize: 18,
+                                      )),
+                                ],
                               ),
-                              const Text('No alarms for you yet',
-                                  style: TextStyle(
-                                    color: Color(0xCC385A64),
-                                    fontFamily: 'Skranji',
-                                    fontSize: 18,
-                                  )),
-                            ],
-                          ),
-                        );
-                      } else {
-                        return Expanded(
-                          child: AnimatedList(
-                              key: listKey,
-                              initialItemCount: allAlarms.length,
-                              itemBuilder: (context, index, animation) {
-                                return ListItemWidget(
-                                    item: allAlarms[index],
-                                    animation: animation,
-                                    onClicked: () {
-                                      removeItem(
-                                        index,
-                                        allAlarms[index]['RecordUrl'],
-                                      );
-                                    });
-                              }),
-                        );
-                      }
-                    },
-                    error: (String message) => Center(
-                          child: Text(message),
-                        ));
-              },
-            )
-          ],
-        ),
-        const CreatedAlarms(),
-        const ContactsPermissions(),
-        const OnboardingScreen(),
-      ][currentIndex],
+                            );
+                          } else {
+                            return Expanded(
+                              child: AnimatedList(
+                                  key: listKey,
+                                  initialItemCount: allAlarms.length,
+                                  itemBuilder: (context, index, animation) {
+                                    return ListItemWidget(
+                                        item: allAlarms[index],
+                                        animation: animation,
+                                        onClicked: () {
+                                          removeItem(
+                                            index,
+                                            allAlarms[index]['RecordUrl'],
+                                          );
+                                        });
+                                  }),
+                            );
+                          }
+                        },
+                        error: (String message) => Center(
+                              child: Text(message),
+                            ));
+                  },
+                )
+              ],
+            ),
+            const CreatedAlarms(),
+            const ContactsPermissions(),
+            const OnboardingScreen(),
+          ][currentIndex],
+        );
+      },
     );
   }
 }
@@ -717,7 +761,6 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                           // Optional onChange to receive value as DateTime
                                           onChangeDateTime:
                                               (DateTime dateTime) {
-                                            print(dateTime);
                                             debugPrint(
                                                 "[debug datetime]:  $dateTime");
                                             context
@@ -822,15 +865,15 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                           Transform.translate(
                             offset: const Offset(0.0, -10.0),
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 40.0),
+                              padding: const EdgeInsets.only(left: 20.0),
                               child: Row(
                                 children: [
                                   Text(
-                                      '${widget.item['createdByUserName']} Created this alarm for you',
+                                      '${widget.item['createdByUserName']} created this alarm for you',
                                       style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',
-                                        fontSize: 18,
+                                        fontSize: 15,
                                       )),
                                 ],
                               ),
@@ -842,7 +885,6 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                         alignment: Alignment.bottomRight,
                         child: InkWell(
                           onTap: () {
-                            print('Clicked');
                             setState(() {
                               widget.onClicked!();
                             });
@@ -970,7 +1012,20 @@ class SingleContact extends StatelessWidget {
 class TopBanner extends StatelessWidget {
   const TopBanner({
     Key? key,
+    required this.userName,
   }) : super(key: key);
+  final String userName;
+
+  String greeting() {
+    var hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Morning';
+    }
+    if (hour < 17) {
+      return 'Afternoon';
+    }
+    return 'Evening';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1012,10 +1067,10 @@ class TopBanner extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 30.0, top: 10),
-                        child: Text('Top of the Morning',
-                            style: TextStyle(
+                      Padding(
+                        padding: const EdgeInsets.only(left: 30.0, top: 10),
+                        child: Text('Top of the ${greeting()}',
+                            style: const TextStyle(
                               color: Color(0xFF7689D6),
                               fontFamily: 'Skranji',
                               fontSize: 18,
@@ -1035,11 +1090,11 @@ class TopBanner extends StatelessWidget {
                     ],
                   ),
                   Row(
-                    children: const [
+                    children: [
                       Padding(
-                        padding: EdgeInsets.only(left: 30.0, top: 5),
-                        child: Text('Kevin',
-                            style: TextStyle(
+                        padding: const EdgeInsets.only(left: 30.0, top: 5),
+                        child: Text(userName,
+                            style: const TextStyle(
                               color: Color(0xFF7689D6),
                               fontFamily: 'Skranji',
                               fontSize: 18,
@@ -1088,8 +1143,8 @@ class TopBanner extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 20.0),
                         child: Container(
                           color: Colors.white,
-                          height: 90,
-                          width: 100,
+                          height: 70,
+                          width: 70,
                           child: Image.asset(
                             "assets/images/gif2.gif",
                             fit: BoxFit.cover,

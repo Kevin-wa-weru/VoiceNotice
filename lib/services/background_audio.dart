@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
 
 class BackgroundAudio {
@@ -18,19 +19,19 @@ class BackgroundAudio {
   }
 
   Future playBackgroundAudio(minute, audioPath) async {
-    AlarmHelper _alarmHelper = AlarmHelper();
-
+    AlarmHelper alarmHelper = AlarmHelper();
+    alarmHelper.updateAudioState('YES', 'PANAMA');
     await _player!
         .play(DeviceFileSource(audioPath))
         .then((value) => _player!.onPlayerComplete.listen((event) async {
               List<PlayerStating> audioState =
-                  await _alarmHelper.getAudioState();
+                  await alarmHelper.getAudioState();
 
               if (audioState.isEmpty) {
               } else {
-                print(
+                debugPrint(
                     'BACKGROUND AUDIO CHANGE NOTIFIERRR:::${audioState.first.state}');
-                if (DateTime.now().minute > (minute.toInt() + 2) ||
+                if (DateTime.now().minute > (minute.toInt() + 1) ||
                     audioState.first.state == 'NO') {
                   _player!.stop();
                 } else {

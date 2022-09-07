@@ -58,7 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       countryName = locationx["country"];
       countryCode = '+${country.first.phoneCode}';
     });
-    print('COUNTRYYYYY:::::::::::::: $countryCode');
+    debugPrint('COUNTRYYYYY:::::::::::::: $countryCode');
     return locationx["country"];
   }
 
@@ -299,7 +299,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               height: 30,
                             ),
                             Container(
-                              // color: Colors.red,
+                              color: Colors.transparent,
                               height: 150,
                               child: Row(
                                 mainAxisAlignment:
@@ -466,6 +466,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                             InkWell(
                               onTap: () {
+                                // AlarmHelper _alarmHelper = AlarmHelper();
+                                // _alarmHelper.insertUserName(
+                                //     UserName(idi: 1, userID: 'Herooo'));
                                 if (phoneController.text.isEmpty ||
                                     phoneController.text.length < 8 ||
                                     phoneController.text.length > 12) {
@@ -481,17 +484,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(snackBar);
                                 } else {
-                                  print(
-                                    '$countryCode${phoneController.text.trim()}',
-                                  );
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) {
+                                    return VerifyNumber(
+                                      number:
+                                          '$countryCode${phoneController.text.trim()}',
+                                    );
+                                  }));
                                 }
-
-                                // Navigator.push(context,
-                                //     MaterialPageRoute(builder: (context) {
-                                //   return  VerifyNumber(
-                                //     number: '$countryCode${phoneController.text.trim()}',
-                                //   );
-                                // }));
                               },
                               child: Container(
                                 height: 40,

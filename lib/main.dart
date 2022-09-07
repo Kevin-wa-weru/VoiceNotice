@@ -4,31 +4,29 @@ import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:voicenotice/Cubits/mainscreen.dart';
-import 'package:voicenotice/homepage.dart';
-import 'package:voicenotice/models/user_credentials.dart';
+import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:voicenotice/homepage.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
 import 'package:voicenotice/services/background_audio.dart';
-import 'package:voicenotice/services/hive.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:voicenotice/services/notifications.dart';
+
+import 'Cubits/cubit/create_alarms_cubit.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeService();
-  await Hive.initFlutter();
-
-  Hive.registerAdapter(UserRegAdapter());
-  await Hive.openBox<UserReg>('account');
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -39,12 +37,11 @@ Future main() async {
       android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
   flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onSelectNotification: (payload) async {
-    AlarmHelper _alarmHelper = AlarmHelper();
-    _alarmHelper.updateAudioState('NO', 'PANAMA');
-    List<PlayerStating> audioState = await _alarmHelper.getAudioState();
-    print('TIMETRAVELLING CHANGE NOTIFIERRR:::${audioState.first.state}');
+    AlarmHelper alarmHelper = AlarmHelper();
+    alarmHelper.updateAudioState('NO', 'PANAMA');
+    List<PlayerStating> audioState = await alarmHelper.getAudioState();
     Timer(const Duration(seconds: 2), () async {
-      _alarmHelper.deleteAudioState(audioState.first.constName!);
+      alarmHelper.deleteAudioState(audioState.first.constName!);
     });
   });
 
@@ -58,22 +55,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final box = Boxes.getAccount();
-    final account = box.values.toList().cast<UserReg>();
-    // ignore: prefer_typing_uninitialized_variables
-    late var userid;
-    if (account.isEmpty) {
-      userid = null;
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+
+    late String userid = '';
+    if (user == null) {
+      userid = '';
     } else {
-      userid = account[0].userid;
+      userid = user.uid;
     }
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => AllAlarmsCubit(),
+        ),
+        BlocProvider(
+          create: (context) => EditTimeCubit(),
+        ),
+        BlocProvider(
+          create: (contex) => CreateAlarmsCubit(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: userid == '' ? const OnboardingScreen() : const HomePage(),
       ),
-      home: userid != null ? const OnboardingScreen() : const MainScreen(),
     );
   }
 }
@@ -109,7 +120,6 @@ Future<void> initializeService() async {
 // run app from xcode, then from xcode menu, select Simulate Background Fetch
 bool onIosBackground(ServiceInstance service) {
   WidgetsFlutterBinding.ensureInitialized();
-  print('FLUTTER BACKGROUND FETCH');
 
   return true;
 }
@@ -136,7 +146,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(minutes: 60), (timer) async {
+  Timer.periodic(const Duration(minutes: 1), (timer) async {
     if (service is AndroidServiceInstance) {
       service.setForegroundNotificationInfo(
         title: "My App Service",
@@ -144,114 +154,140 @@ void onStart(ServiceInstance service) async {
       );
     }
 
-    print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
-
     // var userData = await usersRef.doc(FirebaseServices().getUserId()).get();
+
+    // getUseridFromLocalDB() async {
+    //   AlarmHelper _alarmHelper = AlarmHelper();
+    //   List<UserName> userID = await _alarmHelper.getUserName();
+    //   if (userID.isEmpty) {
+    //     userid = '';
+    //   } else {
+    //     print('BACKGROUND USERIDDDD:::${userID.first.userID}');
+    //     userid = userID.first.userID!;
+    //   }
+    // }
+
+    // await getUseridFromLocalDB();
+    late String userid = '';
     await Firebase.initializeApp();
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
 
-    var userData = await FirebaseFirestore.instance
-        .collection("alarms")
-        .where('TargetUserid', isEqualTo: testUser)
-        .get();
-
-    print(userData.docs);
-    // ignore: unnecessary_null_comparison
-    if (userData.docs.isEmpty) {
-      print('BACKGROUND:::: USER HAS NO ALARMS');
+    if (user == null) {
+      userid = '';
     } else {
-      print(userData.docs[0].data());
+      userid = user.uid;
+    }
 
-      AlarmHelper _alarmHelper = AlarmHelper();
-      _alarmHelper
-          .initializeDatabase()
-          .then((value) => print('====DATABASE INITIALISED'));
+    debugPrint(
+        'BACKGROUND:::: USER HAS NO ALARMS SSDSDSDSDSDSDSDSDSDSDSDSDSDSDDSDSDSSDSDSDSDSDSDSDSDD$userid');
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+
+    if (userid == '') {
+      debugPrint('BACKGROUNDDDDDDD NAME:::::::::IS EMPTY');
+    } else {
+      debugPrint('BACKGROUNDDDDDDD NAME:::::::::$userid');
+      var userData = await FirebaseFirestore.instance
+          .collection("alarms")
+          .where('TargetUserid', isEqualTo: userid)
+          .get();
+
+      // ignore: unnecessary_null_comparison
+      if (userData.docs.isEmpty) {
+        debugPrint('BACKGROUND:::: USER HAS NO ALARMS');
+      } else {
+        AlarmHelper alarmHelper = AlarmHelper();
+        alarmHelper
+            .initializeDatabase()
+            .then((value) => debugPrint('====DATABASE INITIALISED'));
 
 //SAVE AUDIO TO LOCAL STORAGE
-      saveToLocal(audioUrl, date) async {
-        Directory appDocDir = await getApplicationDocumentsDirectory();
-        File downloadToFile = File('${appDocDir.path}/$date');
-        FirebaseStorage firebaseStorage = FirebaseStorage.instance;
-        await firebaseStorage
-            .ref('Audios/$audioUrl')
-            .writeToFile(downloadToFile);
+        saveToLocal(audioUrl, date) async {
+          Directory appDocDir = await getApplicationDocumentsDirectory();
+          File downloadToFile = File('${appDocDir.path}/$date');
+          FirebaseStorage firebaseStorage = FirebaseStorage.instance;
+          await firebaseStorage
+              .ref('Audios/$audioUrl')
+              .writeToFile(downloadToFile);
 
-        return '${appDocDir.path}/$date';
-      }
-
-      late List alarms = [];
-
-      for (var user in userData.docs) {
-        alarms.add(user.data());
-      }
-
-      print('MAINNN  ===== $alarms');
-
-      late List filteredAlarms = [];
-
-      for (var alarm in alarms) {
-        bool exists = await _alarmHelper.checkIfAlarmExists(alarm['RecordUrl']);
-
-        if (exists) {
-          _alarmHelper.updateAlarm(
-              DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
-              DateTime.parse(alarm['DateTime'].toDate().toString()).minute,
-              alarm['RecordUrl']);
-        } else {
-          filteredAlarms.add(alarm);
+          return '${appDocDir.path}/$date';
         }
-      }
 
-      print('MAINNN FILTERED ALARMS  ===== $filteredAlarms');
+        late List alarms = [];
 
-      if (filteredAlarms.isEmpty) {
-        print(
-            'BACKGROUNDS:::::::   FILTERED THROUGH LOCAL DB AND FOUND SIMILAR ALARAMS');
-      } else {
-        late List<AlarmInfo> _alarmInfo = [];
-        for (var alarm in filteredAlarms) {
-          var alarmInfo = AlarmInfo(
-            title: alarm['AlarmTitle'],
-            alarmDateTime:
-                DateTime.parse(alarm['DateTime'].toDate().toString()),
-            hour: DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
-            minute:
+        for (var user in userData.docs) {
+          alarms.add(user.data());
+        }
+
+        late List filteredAlarms = [];
+
+        for (var alarm in alarms) {
+          bool exists =
+              await alarmHelper.checkIfAlarmExists(alarm['RecordUrl']);
+
+          if (exists) {
+            alarmHelper.updateAlarm(
+                DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
                 DateTime.parse(alarm['DateTime'].toDate().toString()).minute,
-            creator: alarm['createdByUserName'],
-            audioPath: await saveToLocal(alarm['RecordUrl'], alarm['DateTime']),
-            fileRef: alarm['RecordUrl'],
-          );
-          _alarmInfo.add(alarmInfo);
+                alarm['RecordUrl']);
+          } else {
+            filteredAlarms.add(alarm);
+          }
         }
 
-        for (var alarm in _alarmInfo) {
-          print(alarm.creator);
-          _alarmHelper.insertAlarm(alarm);
+        debugPrint('MAINNN FILTERED ALARMS  ===== $filteredAlarms');
+
+        if (filteredAlarms.isEmpty) {
+          debugPrint(
+              'BACKGROUNDS:::::::   FILTERED THROUGH LOCAL DB AND FOUND SIMILAR ALARAMS');
+        } else {
+          late List<AlarmInfo> alarmInformation = [];
+          for (var alarm in filteredAlarms) {
+            var alarmInfo = AlarmInfo(
+              title: alarm['AlarmTitle'],
+              alarmDateTime:
+                  DateTime.parse(alarm['DateTime'].toDate().toString()),
+              hour: DateTime.parse(alarm['DateTime'].toDate().toString()).hour,
+              minute:
+                  DateTime.parse(alarm['DateTime'].toDate().toString()).minute,
+              creator: alarm['createdByUserName'],
+              audioPath:
+                  await saveToLocal(alarm['RecordUrl'], alarm['DateTime']),
+              fileRef: alarm['RecordUrl'],
+            );
+            alarmInformation.add(alarmInfo);
+          }
+
+          for (var alarm in alarmInformation) {
+            alarmHelper.insertAlarm(alarm);
+          }
         }
-      }
 
-      List<AlarmInfo> alarmsInLocalDB = await _alarmHelper.getAlarms();
-      for (var alarm in alarmsInLocalDB) {
-        print('BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().hour}');
-        print(
-            'BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().minute}');
-        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.hour}');
-        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.minute}');
-        print('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.audioPath!}');
-        if (DateTime.now().hour == alarm.hour &&
-            DateTime.now().minute == alarm.minute) {
-          _alarmHelper.insertAudioState(PlayerStating(
-            constName: 'PANAMA',
-            state: 'YES',
-          ));
-          Notificationed.showNotification(
-                  title: '${alarm.creator} says ${alarm.title}',
-                  body: 'TAP TO STOP PLAYING')
-              .then((value) async {
-            final play = BackgroundAudio();
+        List<AlarmInfo> alarmsInLocalDB = await alarmHelper.getAlarms();
+        for (var alarm in alarmsInLocalDB) {
+          debugPrint(
+              'BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().hour}');
+          debugPrint(
+              'BACKGROUND NOTIFICATION:::::::::::::::::${DateTime.now().minute}');
+          debugPrint('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.hour}');
+          debugPrint('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.minute}');
+          debugPrint(
+              'BACKGROUND NOTIFICATION:::::::::::::::::${alarm.audioPath!}');
+          if (DateTime.now().hour == alarm.hour &&
+              DateTime.now().minute == alarm.minute) {
+            alarmHelper.insertAudioState(PlayerStating(
+              constName: 'PANAMA',
+              state: 'YES',
+            ));
+            Notificationed.showNotification(
+                    title: '${alarm.creator} says ${alarm.title}',
+                    body: 'TAP TO STOP PLAYING')
+                .then((value) async {
+              final play = BackgroundAudio();
 
-            play.playBackgroundAudio(alarm.minute, alarm.audioPath);
-          });
+              play.playBackgroundAudio(alarm.minute, alarm.audioPath);
+            });
+          }
         }
       }
     }

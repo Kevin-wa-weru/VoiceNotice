@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:day_night_time_picker/lib/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -34,7 +35,6 @@ class _CreatedAlarmsState extends State<CreatedAlarms> {
       return false;
     }
 
-    print(userWithPermissionPhones);
     if (userWithPermissionPhones.contains(creatorPhone) == false) {
       return false;
     }
@@ -64,127 +64,150 @@ class _CreatedAlarmsState extends State<CreatedAlarms> {
     }
   }
 
+  late String userName = '';
+
+  getUserName() {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+
+    if (user == null) {
+      userName = 'User';
+    } else {
+      userName = user.displayName!;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    getUserName();
     context.read<CreateAlarmsCubit>().getUserCreatedalarms();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          const SizedBox(
-            height: 10,
-          ),
-          const TopBanner(),
-          BlocBuilder<CreateAlarmsCubit, CreateAlarmsState>(
-            builder: (context, state) {
-              return state.when(
-                  initial: () => Column(
-                        children: const [
-                          SizedBox(height: 100),
-                          Center(
-                              child: CircularProgressIndicator(
-                            color: Color(0xCC385A64),
-                            strokeWidth: 5,
-                          )),
-                        ],
-                      ),
-                  loading: () => Column(
-                        children: const [
-                          SizedBox(height: 100),
-                          Center(
-                              child: CircularProgressIndicator(
-                            color: Color(0xCC385A64),
-                            strokeWidth: 5,
-                          )),
-                        ],
-                      ),
-                  loaded: (List<dynamic> allAlarms) {
-                    allCreatedAlarms = allAlarms;
+    return BlocConsumer<CreateAlarmsCubit, CreateAlarmsState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        return Scaffold(
+          body: Column(
+            children: [
+              const SizedBox(
+                height: 10,
+              ),
+              TopBanner(
+                userName: userName,
+              ),
+              BlocBuilder<CreateAlarmsCubit, CreateAlarmsState>(
+                builder: (context, state) {
+                  return state.when(
+                      initial: () => Column(
+                            children: const [
+                              SizedBox(height: 100),
+                              Center(
+                                  child: CircularProgressIndicator(
+                                color: Color(0xCC385A64),
+                                strokeWidth: 5,
+                              )),
+                            ],
+                          ),
+                      loading: () => Column(
+                            children: const [
+                              SizedBox(height: 100),
+                              Center(
+                                  child: CircularProgressIndicator(
+                                color: Color(0xCC385A64),
+                                strokeWidth: 5,
+                              )),
+                            ],
+                          ),
+                      loaded: (List<dynamic> allAlarms) {
+                        allCreatedAlarms = allAlarms;
 
-                    if (allCreatedAlarms!.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 20.0),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 250.25,
-                              width: 200.5,
-                              child: Image.asset(
-                                "assets/images/empty.gif",
-                                height: 125.0,
-                                width: 125.0,
-                              ),
+                        if (allCreatedAlarms!.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 20.0),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 250.25,
+                                  width: 200.5,
+                                  child: Image.asset(
+                                    "assets/images/empty.gif",
+                                    height: 125.0,
+                                    width: 125.0,
+                                  ),
+                                ),
+                                const Text('Its Empty here...',
+                                    style: TextStyle(
+                                      color: Color(0xFF7689D6),
+                                      fontFamily: 'Skranji',
+                                      fontSize: 18,
+                                    )),
+                              ],
                             ),
-                            const Text('Its Empty here...',
-                                style: TextStyle(
-                                  color: Color(0xFF7689D6),
-                                  fontFamily: 'Skranji',
-                                  fontSize: 18,
-                                )),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return Expanded(
-                        child: AnimatedList(
-                            key: listKey,
-                            initialItemCount: allAlarms.length,
-                            itemBuilder: (context, index, animation) {
-                              return ListOfItemWidget(
-                                  item: allAlarms[index],
-                                  animation: animation,
-                                  onClicked: () async {
-                                    var response = await removeItem(
-                                      index,
-                                      allAlarms[index]['RecordUrl'],
-                                      allAlarms[index]['TargetUserid'],
-                                      allAlarms[index]['createdByPhoneNUmber'],
-                                      allAlarms[index]['createdForUserName'],
-                                    );
+                          );
+                        } else {
+                          return Expanded(
+                            child: AnimatedList(
+                                key: listKey,
+                                initialItemCount: allAlarms.length,
+                                itemBuilder: (context, index, animation) {
+                                  return ListOfItemWidget(
+                                      item: allAlarms[index],
+                                      animation: animation,
+                                      onClicked: () async {
+                                        var response = await removeItem(
+                                          index,
+                                          allAlarms[index]['RecordUrl'],
+                                          allAlarms[index]['TargetUserid'],
+                                          allAlarms[index]
+                                              ['createdByPhoneNUmber'],
+                                          allAlarms[index]
+                                              ['createdForUserName'],
+                                        );
 
-                                    if (response == false) {
-                                      var snackBar = SnackBar(
-                                          content: Text(
-                                        'Oops.${allAlarms[index]['createdForUserName']} has not given you pemission to delete',
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: 'Skranji',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 18),
-                                      ));
-                                      // ignore: use_build_context_synchronously
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    } else {
-                                      var snackBar = const SnackBar(
-                                          content: Text(
-                                        'Deleted',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: 'Skranji',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 18),
-                                      ));
-                                      // ignore: use_build_context_synchronously
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    }
-                                  });
-                            }),
-                      );
-                    }
-                  },
-                  error: (String message) => Center(
-                        child: Text(message),
-                      ));
-            },
-          )
-        ],
-      ),
+                                        if (response == false) {
+                                          var snackBar = SnackBar(
+                                              content: Text(
+                                            'Oops.${allAlarms[index]['createdForUserName']} has not given you pemission to delete',
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: 'Skranji',
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 18),
+                                          ));
+                                          // ignore: use_build_context_synchronously
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(snackBar);
+                                        } else {
+                                          var snackBar = const SnackBar(
+                                              content: Text(
+                                            'Deleted',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: 'Skranji',
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 18),
+                                          ));
+                                          // ignore: use_build_context_synchronously
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(snackBar);
+                                        }
+                                      });
+                                }),
+                          );
+                        }
+                      },
+                      error: (String message) => Center(
+                            child: Text(message),
+                          ));
+                },
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -353,70 +376,72 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                     right: 20.0,
                                   ),
                                   child: InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        showPicker(
-                                          borderRadius: 15,
-                                          iosStylePicker: true,
-                                          unselectedColor:
-                                              const Color(0xCC385A64),
-                                          accentColor: const Color(0xFF7689D6),
-                                          okStyle: const TextStyle(
-                                            color: Color(0xFF7689D6),
-                                            fontFamily: 'Skranji',
-                                            fontSize: 18,
-                                            // fontWeight: FontWeight.w600,
-                                          ),
-                                          okText: 'Okay',
-                                          cancelStyle: const TextStyle(
-                                            color: Color(0xFFBC343E),
-                                            fontFamily: 'Skranji',
-                                            fontSize: 18,
-                                            // fontWeight: FontWeight.w600,
-                                          ),
-                                          blurredBackground: true,
-                                          context: context,
-                                          value: _time,
-                                          onChange: onTimeChanged,
-                                          minuteInterval: MinuteInterval.ONE,
-                                          // Optional onChange to receive value as DateTime
-                                          onChangeDateTime:
-                                              (DateTime dateTime) async {
-                                            print(dateTime);
-                                            debugPrint(
-                                                "[debug datetime]:  $dateTime");
-                                            var response =
-                                                resolveIfCanEditAlarm(
-                                                    widget.item['RecordUrl'],
-                                                    widget.item['TargetUserid'],
-                                                    widget.item[
-                                                        'createdByPhoneNUmber'],
-                                                    widget.item[
-                                                        'createdForUserName']);
-                                            if (response == false) {
-                                              var snackBar = SnackBar(
-                                                  content: Text(
-                                                'Oops.${widget.item['createdForUserName']} has not given you pemission to edit',
-                                                style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontFamily: 'Skranji',
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 18),
-                                              ));
-                                              // ignore: use_build_context_synchronously
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(snackBar);
-                                            } else {
+                                    onTap: () async {
+                                      var response =
+                                          await resolveIfCanEditAlarm(
+                                              widget.item['RecordUrl'],
+                                              widget.item['TargetUserid'],
+                                              widget
+                                                  .item['createdByPhoneNUmber'],
+                                              widget
+                                                  .item['createdForUserName']);
+                                      if (response == false) {
+                                        var snackBar = SnackBar(
+                                            content: Text(
+                                          'Oops.${widget.item['createdForUserName']} has not given you pemission to edit',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: 'Skranji',
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 18),
+                                        ));
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      } else {
+                                        // ignore: use_build_context_synchronously
+                                        Navigator.of(context).push(
+                                          showPicker(
+                                            borderRadius: 15,
+                                            iosStylePicker: true,
+                                            unselectedColor:
+                                                const Color(0xCC385A64),
+                                            accentColor:
+                                                const Color(0xFF7689D6),
+                                            okStyle: const TextStyle(
+                                              color: Color(0xFF7689D6),
+                                              fontFamily: 'Skranji',
+                                              fontSize: 18,
+                                              // fontWeight: FontWeight.w600,
+                                            ),
+                                            okText: 'Okay',
+                                            cancelStyle: const TextStyle(
+                                              color: Color(0xFFBC343E),
+                                              fontFamily: 'Skranji',
+                                              fontSize: 18,
+                                              // fontWeight: FontWeight.w600,
+                                            ),
+                                            blurredBackground: true,
+                                            context: context,
+                                            value: _time,
+                                            onChange: onTimeChanged,
+                                            minuteInterval: MinuteInterval.ONE,
+                                            // Optional onChange to receive value as DateTime
+                                            onChangeDateTime:
+                                                (DateTime dateTime) {
+                                              debugPrint(
+                                                  "[debug datetime]:  $dateTime");
+
                                               context
                                                   .read<EditTimeCubit>()
                                                   .changeTime(
                                                       _time.hour,
                                                       _time.minute,
                                                       widget.item['RecordUrl']);
-                                            }
-                                          },
-                                        ),
-                                      );
+                                            },
+                                          ),
+                                        );
+                                      }
                                     },
                                     child: const Text('Edit Time',
                                         style: TextStyle(
@@ -510,15 +535,15 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                           Transform.translate(
                             offset: const Offset(0.0, -10.0),
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 40.0),
+                              padding: const EdgeInsets.only(left: 20.0),
                               child: Row(
                                 children: [
                                   Text(
-                                      'YOu created this alarm for ${widget.item['createdForUserName']}',
+                                      'You created this for ${widget.item['createdForUserName']}',
                                       style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',
-                                        fontSize: 18,
+                                        fontSize: 15,
                                       )),
                                 ],
                               ),
@@ -530,7 +555,6 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                         alignment: Alignment.bottomRight,
                         child: InkWell(
                           onTap: () {
-                            print('Clicked');
                             setState(() {
                               widget.onClicked!();
                             });

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:contacts_service/contacts_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,11 +22,13 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   bool candeleteAlarm = false;
 
   Future<bool> resolveIFCanCreeateAlarm(phoneNumber) async {
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
 
     var userData = await FirebaseFirestore.instance
         .collection("users")
-        .doc(testUser)
+        .doc(user!.uid)
         .get();
 
     List userWithPermissionPhones = userData.data()!['canCreate'];
@@ -38,11 +41,13 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   }
 
   Future<bool> resolveIFCanEditAlarm(phoneNumber) async {
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
 
     var userData = await FirebaseFirestore.instance
         .collection("users")
-        .doc(testUser)
+        .doc(user!.uid)
         .get();
 
     List userWithPermissionPhones = userData.data()!['canEdit'];
@@ -55,11 +60,13 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   }
 
   Future<bool> resolveIFCanDeleteAlarm(phoneNumber) async {
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
 
     var userData = await FirebaseFirestore.instance
         .collection("users")
-        .doc(testUser)
+        .doc(user!.uid)
         .get();
 
     List userWithPermissionPhones = userData.data()!['canDelete'];
@@ -75,8 +82,8 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   void initState() {
     super.initState();
     getAllContactsInPhone();
-    getContactsWithApp();
-    getContactsWithoutApp();
+
+    // getContactsWithoutApp();
   }
 
   getAllContactsInPhone() async {
@@ -85,19 +92,24 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     setState(() {
       contacts = phonecontacts;
     });
+
+    getContactsWithApp();
   }
 
   getContactsWithApp() async {
     var userData = await FirebaseFirestore.instance.collection("users").get();
-    List allUserPhones = [];
-    List allContacts = [];
+    late List allUserPhones = [];
+    late List allContacts = [];
 
     for (var userData in userData.docs) {
       allUserPhones.add(userData.data()['phone']);
     }
 
     for (var contact in contacts) {
-      allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
+      if (contact.phones!.isEmpty) {
+      } else {
+        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
+      }
     }
 
     List userContactsWithApp = allUserPhones
@@ -110,7 +122,9 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
 
     late List tempHolder = [];
     for (var contact in userContactsWithApp) {
-      List<Contact> filtered = contacts
+      List<Contact> tempHoldery =
+          contacts.where((element) => element.phones!.isNotEmpty).toList();
+      List<Contact> filtered = tempHoldery
           .where((element) =>
               element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
           .toList();
@@ -122,6 +136,8 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
         contactsWithApp.add(contact[0]);
       });
     }
+
+    getContactsWithoutApp();
   }
 
   getContactsWithoutApp() async {
@@ -135,7 +151,10 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     }
 
     for (var contact in contacts) {
-      allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
+      if (contact.phones!.isEmpty) {
+      } else {
+        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
+      }
     }
 
     List difference =
@@ -143,7 +162,9 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
 
     late List tempHolder = [];
     for (var contact in difference) {
-      List<Contact> filtered = contacts
+      List<Contact> tempHoldery =
+          contacts.where((element) => element.phones!.isNotEmpty).toList();
+      List<Contact> filtered = tempHoldery
           .where((element) =>
               element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
           .toList();
@@ -158,16 +179,15 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     }
   }
 
-  toggleCreateAlarmPermission(phoneNumber, bool value) async {
-    print(value);
-    print(phoneNumber);
-
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+  Future toggleCreateAlarmPermission(phoneNumber, bool value) async {
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
     if (value == true) {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canCreate':
             FieldValue.arrayUnion([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -179,7 +199,7 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canCreate':
             FieldValue.arrayRemove([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -189,15 +209,15 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   }
 
   toggleEditAlarmPermission(phoneNumber, bool value) async {
-    print(value);
-    print(phoneNumber);
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
 
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
     if (value == true) {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canEdit':
             FieldValue.arrayUnion([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -209,7 +229,7 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canEdit':
             FieldValue.arrayRemove([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -219,15 +239,14 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   }
 
   toggleDeleteAlarmPermission(phoneNumber, bool value) async {
-    print(value);
-    print(phoneNumber);
-
-    String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
     if (value == true) {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canDelete':
             FieldValue.arrayUnion([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -239,7 +258,7 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
 
-      await userRef.doc(testUser).update({
+      await userRef.doc(user!.uid).update({
         'canDelete':
             FieldValue.arrayRemove([phoneNumber.replaceAll(RegExp(' '), '')])
       });
@@ -321,12 +340,27 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                         fontSize: 18,
                                       )),
                                 )),
-                            title: Text('${contact.displayName}',
-                                style: const TextStyle(
-                                  color: Color(0xFF7689D6),
-                                  fontFamily: 'Skranji',
-                                  fontSize: 15,
-                                )),
+                            title: Row(
+                              children: [
+                                Text('${contact.displayName}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF7689D6),
+                                      fontFamily: 'Skranji',
+                                      fontSize: 15,
+                                    )),
+                                // const SizedBox(
+                                //   width: 8,
+                                // ),
+                                // const SizedBox(
+                                //   height: 10.0,
+                                //   width: 10.0,
+                                //   child: CircularProgressIndicator(
+                                //     color: Color(0xFF7689D6),
+                                //     strokeWidth: 2.0,
+                                //   ),
+                                // ),
+                              ],
+                            ),
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(contact.phones![0].value!,
@@ -356,41 +390,35 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                                   snapshot.connectionState) {
                                                 case ConnectionState.waiting:
                                                   if (snapshot.hasData) {
-                                                    return Row(
-                                                      children: [
-                                                        const SizedBox(
-                                                          height: 10.0,
-                                                          width: 10.0,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            color: Color(
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
                                                                 0xFF7689D6),
-                                                            strokeWidth: 2.0,
-                                                          ),
-                                                        ),
-                                                        Checkbox(
-                                                            checkColor:
-                                                                Colors.white,
-                                                            activeColor:
-                                                                const Color(
-                                                                    0xFF7689D6),
-                                                            value:
-                                                                snapshot.data,
-                                                            onChanged:
-                                                                (value) {}),
-                                                      ],
-                                                    );
+                                                        value: snapshot.data,
+                                                        onChanged:
+                                                            (value) async {
+                                                          await toggleCreateAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   } else {
-                                                    return const SizedBox(
-                                                      height: 15.0,
-                                                      width: 15.0,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        color:
-                                                            Color(0xFF7689D6),
-                                                        strokeWidth: 3.0,
-                                                      ),
-                                                    );
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
+                                                                0xFF7689D6),
+                                                        value: false,
+                                                        onChanged:
+                                                            (value) async {
+                                                          await toggleCreateAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   }
 
                                                 default:
@@ -405,8 +433,9 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                                             const Color(
                                                                 0xFF7689D6),
                                                         value: snapshot.data,
-                                                        onChanged: (value) {
-                                                          toggleCreateAlarmPermission(
+                                                        onChanged:
+                                                            (value) async {
+                                                          await toggleCreateAlarmPermission(
                                                               contact.phones![0]
                                                                   .value!,
                                                               value!);
@@ -442,41 +471,33 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                                   snapshot.connectionState) {
                                                 case ConnectionState.waiting:
                                                   if (snapshot.hasData) {
-                                                    return Row(
-                                                      children: [
-                                                        const SizedBox(
-                                                          height: 10.0,
-                                                          width: 10.0,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            color: Color(
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
                                                                 0xFF7689D6),
-                                                            strokeWidth: 2.0,
-                                                          ),
-                                                        ),
-                                                        Checkbox(
-                                                            checkColor:
-                                                                Colors.white,
-                                                            activeColor:
-                                                                const Color(
-                                                                    0xFF7689D6),
-                                                            value:
-                                                                snapshot.data,
-                                                            onChanged:
-                                                                (value) {}),
-                                                      ],
-                                                    );
+                                                        value: snapshot.data,
+                                                        onChanged: (value) {
+                                                          toggleEditAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   } else {
-                                                    return const SizedBox(
-                                                      height: 15.0,
-                                                      width: 15.0,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        color:
-                                                            Color(0xFF7689D6),
-                                                        strokeWidth: 3.0,
-                                                      ),
-                                                    );
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
+                                                                0xFF7689D6),
+                                                        value: false,
+                                                        onChanged: (value) {
+                                                          toggleEditAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   }
 
                                                 default:
@@ -528,41 +549,33 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                                   snapshot.connectionState) {
                                                 case ConnectionState.waiting:
                                                   if (snapshot.hasData) {
-                                                    return Row(
-                                                      children: [
-                                                        const SizedBox(
-                                                          height: 10.0,
-                                                          width: 10.0,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            color: Color(
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
                                                                 0xFF7689D6),
-                                                            strokeWidth: 2.0,
-                                                          ),
-                                                        ),
-                                                        Checkbox(
-                                                            checkColor:
-                                                                Colors.white,
-                                                            activeColor:
-                                                                const Color(
-                                                                    0xFF7689D6),
-                                                            value:
-                                                                snapshot.data,
-                                                            onChanged:
-                                                                (value) {}),
-                                                      ],
-                                                    );
+                                                        value: snapshot.data,
+                                                        onChanged: (value) {
+                                                          toggleDeleteAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   } else {
-                                                    return const SizedBox(
-                                                      height: 15.0,
-                                                      width: 15.0,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        color:
-                                                            Color(0xFF7689D6),
-                                                        strokeWidth: 3.0,
-                                                      ),
-                                                    );
+                                                    return Checkbox(
+                                                        checkColor:
+                                                            Colors.white,
+                                                        activeColor:
+                                                            const Color(
+                                                                0xFF7689D6),
+                                                        value: false,
+                                                        onChanged: (value) {
+                                                          toggleDeleteAlarmPermission(
+                                                              contact.phones![0]
+                                                                  .value!,
+                                                              value!);
+                                                        });
                                                   }
 
                                                 default:
@@ -713,3 +726,27 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     );
   }
 }
+
+
+
+// class SyncedContacts {
+//   final UserDetails? user;
+//   final String? name;
+//   final String? number;
+
+//   SyncedContacts({
+//     this.user,
+//     this.name,
+//     this.number,
+//   });
+
+//   @override
+//   bool operator ==(covariant SyncedContacts other) {
+//     if (identical(this, other)) return true;
+
+//     return other.user == user && other.name == name && other.number == number;
+//   }
+
+//   @override
+//   int get hashCode => user.hashCode ^ name.hashCode ^ number.hashCode;
+// }

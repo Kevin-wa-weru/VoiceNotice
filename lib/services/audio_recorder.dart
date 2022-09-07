@@ -36,6 +36,7 @@ class SoundRecorder {
     Directory tempDir = await getTemporaryDirectory();
     String tempPath = tempDir.path;
     String fullPath = '$tempPath/audio_path.aac';
+    // ignore: unused_local_variable
     File tempFile = File('$tempPath/audio_path.aac');
 
     return fullPath;

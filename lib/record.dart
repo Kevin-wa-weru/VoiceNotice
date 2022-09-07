@@ -13,10 +13,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/create_alarms_cubit.dart';
 import 'package:voicenotice/services/audio_player.dart';
 import 'package:voicenotice/services/audio_recorder.dart';
 import 'package:flutter_holo_date_picker/flutter_holo_date_picker.dart';
-import 'package:voicenotice/services/firebase.dart';
 
 class RecordingPage extends StatefulWidget {
   const RecordingPage({Key? key, required this.user}) : super(key: key);
@@ -136,7 +136,7 @@ class _RecordingPageState extends State<RecordingPage> {
               height: MediaQuery.of(context).size.height * 0.5,
               width: MediaQuery.of(context).size.width - 60,
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
@@ -158,11 +158,12 @@ class _RecordingPageState extends State<RecordingPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
+                            padding:
+                                const EdgeInsets.only(left: 10.0, right: 10.0),
                             child: Container(
                               color: Colors.transparent,
                               height: 60,
-                              width: 300,
+                              width: 250,
                               child: Column(
                                 children: [
                                   Padding(
@@ -182,7 +183,7 @@ class _RecordingPageState extends State<RecordingPage> {
                                     height: 6,
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.only(left: 40.0),
+                                    padding: const EdgeInsets.only(left: 30.0),
                                     child: Row(
                                       children: const [
                                         Text('voice notice for Peter',
@@ -597,6 +598,7 @@ class _RecordingPageState extends State<RecordingPage> {
                               fontWeight: FontWeight.w500,
                               fontSize: 18),
                         ));
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       } else {
                         setState(() {
                           appisLoading = true;
@@ -611,8 +613,6 @@ class _RecordingPageState extends State<RecordingPage> {
 
                         // String audioUrl = await response.ref.getDownloadURL();
                         String audioUrl = response.ref.name;
-
-                        print(audioUrl);
 
                         var day = datePicked!.day.toString().length == 1
                             ? '0${datePicked!.day.toString()}'
@@ -645,21 +645,17 @@ class _RecordingPageState extends State<RecordingPage> {
 
                         var userID = snapshot.docs.first.id;
 
-                        //  final FirebaseAuth auth = FirebaseAuth.instance;
-                        // final User? user = auth.currentUser;
-                        // final uid = user!.uid;
-                        // firebaseAuth.currentUser!.displayName;
-                        // firebaseAuth.currentUser!.phoneNumber;
+                        final FirebaseAuth auth = FirebaseAuth.instance;
+                        final User? user = auth.currentUser;
 
                         await alarmRef.add({
                           'AlarmTitle': alarmTitleController.text,
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
-                          'RecordUrl': 'karate.mp3',
-                          'CreateByUserID':
-                              'RBlD6eB8zVPhPvxz1czJkxi44Es1', // TO CHANGE
-                          'createdByUserName': 'Alex', // TO CHANGE
-                          'createdByPhoneNUmber': '+254748189678', // TO CHANGE
+                          'RecordUrl': audioUrl,
+                          'CreateByUserID': user!.uid, // TO CHANGE
+                          'createdByUserName': user.displayName, // TO CHANGE
+                          'createdByPhoneNUmber': user.phoneNumber, // TO CHANGE
                           'TargetUserid': userID,
                           "createdForUserName": widget.user['userName'],
                           'createdForPhoneNUmber': widget.user['phone'],
@@ -674,11 +670,19 @@ class _RecordingPageState extends State<RecordingPage> {
                               fontWeight: FontWeight.w500,
                               fontSize: 18),
                         ));
+                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
                         setState(() {
                           appisLoading = false;
                         });
+
+                        // ignore: use_build_context_synchronously
+                        context.read<AllAlarmsCubit>().getAllUSeralarms();
+                        // ignore: use_build_context_synchronously
+                        context
+                            .read<CreateAlarmsCubit>()
+                            .getUserCreatedalarms();
 
                         Timer(const Duration(seconds: 2), () {
                           // ignore: use_build_context_synchronously
@@ -687,7 +691,7 @@ class _RecordingPageState extends State<RecordingPage> {
                       }
                     },
                     child: Container(
-                      height: 50,
+                      height: 40,
                       width: MediaQuery.of(context).size.width * 0.7,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
