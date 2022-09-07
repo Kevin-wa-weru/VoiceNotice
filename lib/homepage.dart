@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/create_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
@@ -270,6 +271,8 @@ class _HomePageState extends State<HomePage> {
     var snapshot =
         await collection.where('RecordUrl', isEqualTo: recordUrl).get();
     await snapshot.docs.first.reference.delete();
+
+    // context.read<CreateAlarmsCubit>().getUserCreatedalarms();
   }
 
   @override

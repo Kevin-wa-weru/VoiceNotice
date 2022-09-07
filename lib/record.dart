@@ -136,7 +136,7 @@ class _RecordingPageState extends State<RecordingPage> {
               height: MediaQuery.of(context).size.height * 0.5,
               width: MediaQuery.of(context).size.width - 60,
               decoration: const BoxDecoration(
-                color: Colors.transparent,
+                color: Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
@@ -185,9 +185,10 @@ class _RecordingPageState extends State<RecordingPage> {
                                   Padding(
                                     padding: const EdgeInsets.only(left: 30.0),
                                     child: Row(
-                                      children: const [
-                                        Text('voice notice for Peter',
-                                            style: TextStyle(
+                                      children: [
+                                        Text(
+                                            'voice notice for ${widget.user['userName']} ',
+                                            style: const TextStyle(
                                               color: Color(0xCC385A64),
                                               fontFamily: 'Skranji',
                                               fontSize: 18,
@@ -279,13 +280,16 @@ class _RecordingPageState extends State<RecordingPage> {
                               final player = AudioPlayer();
 
                               await player.play(AssetSource('record.mp3'));
-                              setState(() {
-                                isRecording = !isRecording;
-                                if (isRecording) {
-                                  startTimer();
-                                } else {
-                                  stopTimer();
-                                }
+
+                              Timer(const Duration(seconds: 1), () {
+                                setState(() {
+                                  isRecording = !isRecording;
+                                  if (isRecording) {
+                                    startTimer();
+                                  } else {
+                                    stopTimer();
+                                  }
+                                });
                               });
 
                               await recorder.toggleRecorder();
@@ -608,10 +612,10 @@ class _RecordingPageState extends State<RecordingPage> {
 
                         var response = await firebaseStorage
                             .ref('Audios')
-                            .child(DateTime.now().microsecond.toString())
+                            .child(
+                                '${DateTime.now().microsecond.toString()}${DateTime.now().second.toString()}')
                             .putFile(File(await player.getFile()));
 
-                        // String audioUrl = await response.ref.getDownloadURL();
                         String audioUrl = response.ref.name;
 
                         var day = datePicked!.day.toString().length == 1
@@ -638,7 +642,6 @@ class _RecordingPageState extends State<RecordingPage> {
                             FirebaseFirestore.instance.collection("users");
 
                         //get userid of the phone to pass as targetUser id
-
                         var snapshot = await usersRef
                             .where('phone', isEqualTo: widget.user['phone'])
                             .get();
@@ -653,9 +656,9 @@ class _RecordingPageState extends State<RecordingPage> {
                           'DateTime': DateTime.parse(
                               '$year-$month-${day}T$hour:$minute'),
                           'RecordUrl': audioUrl,
-                          'CreateByUserID': user!.uid, // TO CHANGE
-                          'createdByUserName': user.displayName, // TO CHANGE
-                          'createdByPhoneNUmber': user.phoneNumber, // TO CHANGE
+                          'CreateByUserID': user!.uid,
+                          'createdByUserName': user.displayName,
+                          'createdByPhoneNUmber': user.phoneNumber,
                           'TargetUserid': userID,
                           "createdForUserName": widget.user['userName'],
                           'createdForPhoneNUmber': widget.user['phone'],
@@ -679,6 +682,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
                         // ignore: use_build_context_synchronously
                         context.read<AllAlarmsCubit>().getAllUSeralarms();
+
                         // ignore: use_build_context_synchronously
                         context
                             .read<CreateAlarmsCubit>()

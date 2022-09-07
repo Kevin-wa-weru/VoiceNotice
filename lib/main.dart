@@ -20,9 +20,7 @@ import 'package:voicenotice/services/alarm_helper.dart';
 import 'package:voicenotice/services/background_audio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:voicenotice/services/notifications.dart';
-
 import 'Cubits/cubit/create_alarms_cubit.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -153,21 +151,6 @@ void onStart(ServiceInstance service) async {
         content: "Updated at ${DateTime.now()}",
       );
     }
-
-    // var userData = await usersRef.doc(FirebaseServices().getUserId()).get();
-
-    // getUseridFromLocalDB() async {
-    //   AlarmHelper _alarmHelper = AlarmHelper();
-    //   List<UserName> userID = await _alarmHelper.getUserName();
-    //   if (userID.isEmpty) {
-    //     userid = '';
-    //   } else {
-    //     print('BACKGROUND USERIDDDD:::${userID.first.userID}');
-    //     userid = userID.first.userID!;
-    //   }
-    // }
-
-    // await getUseridFromLocalDB();
     late String userid = '';
     await Firebase.initializeApp();
     final FirebaseAuth auth = FirebaseAuth.instance;
