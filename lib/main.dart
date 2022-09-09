@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +15,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:voicenotice/Cubits/cubit/received_message_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/sent_voices_cubit.dart';
 import 'package:voicenotice/homepage.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
@@ -73,6 +76,12 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (contex) => CreateAlarmsCubit(),
+        ),
+        BlocProvider(
+          create: (contex) => ReceivedMessageCubit(),
+        ),
+        BlocProvider(
+          create: (contex) => SentVoicesCubit(),
         ),
       ],
       child: MaterialApp(
@@ -144,32 +153,70 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(minutes: 1), (timer) async {
+
+  late String userid = '';
+  await Firebase.initializeApp();
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final User? user = auth.currentUser;
+
+  if (user == null) {
+    userid = '';
+  } else {
+    userid = user.uid;
+  }
+
+  // listenToIcomingMessage() async {
+  //   final player = AudioPlayer();
+  //   print('MESSAGING BACKGROUND FUNCTION::::::::::::::::::::STARTED');
+
+  //   if (userid == '') {
+  //     debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::IS EMPTY');
+  //   } else {
+  //     debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::$userid');
+  //     // var userData = await FirebaseFirestore.instance
+  //     //     .collection("messages")
+  //     //     .where('TargetUserid', isEqualTo: userid)
+  //     //     .get();
+
+  //     final docRef = FirebaseFirestore.instance
+  //         .collection("messages")
+  //         .where('TargetUserid', isEqualTo: userid);
+  //     docRef.snapshots().listen(
+  //       (event) async {
+  //         print("current data: ${event.docs}");
+  //         for (var message in event.docChanges) {
+  //           print(message.doc.data());
+  //           Notificationed.showNotification(
+  //               title: 'New Voice Notice',
+  //               body: 'From ${message.doc.data()!['createdByUserName']}');
+
+  //           await player
+  //               .play(UrlSource(message.doc.data()!['audioCompleteUrl']));
+  //         }
+  //       },
+  //       onError: (error) => print("Listen failed: $error"),
+  //     );
+  //   }
+  // }
+
+  // listenToIcomingMessage();
+
+  Timer.periodic(const Duration(minutes: 20), (timer) async {
+    print('ALARM BACKGROUND FUNCTION::::::::::::::::::::STARTED');
     if (service is AndroidServiceInstance) {
       service.setForegroundNotificationInfo(
         title: "My App Service",
         content: "Updated at ${DateTime.now()}",
       );
     }
-    late String userid = '';
-    await Firebase.initializeApp();
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-
-    if (user == null) {
-      userid = '';
-    } else {
-      userid = user.uid;
-    }
 
     debugPrint(
         'BACKGROUND:::: USER HAS NO ALARMS SSDSDSDSDSDSDSDSDSDSDSDSDSDSDDSDSDSSDSDSDSDSDSDSDSDD$userid');
-    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
 
     if (userid == '') {
-      debugPrint('BACKGROUNDDDDDDD NAME:::::::::IS EMPTY');
+      debugPrint('BACKGROUNDDDDDDD NAME IN ALARMS:::::::::IS EMPTY');
     } else {
-      debugPrint('BACKGROUNDDDDDDD NAME:::::::::$userid');
+      debugPrint('BACKGROUNDDDDDDD NAME ALARMS:::::::::$userid');
       var userData = await FirebaseFirestore.instance
           .collection("alarms")
           .where('TargetUserid', isEqualTo: userid)

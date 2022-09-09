@@ -1,6 +1,7 @@
 import 'package:animations/animations.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:contacts_service/contacts_service.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:day_night_time_picker/lib/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,8 +14,10 @@ import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
+import 'package:voicenotice/instant_voice.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/record.dart';
+import 'package:voicenotice/recording_page2.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
 
 class HomePage extends StatefulWidget {
@@ -29,6 +32,62 @@ class _HomePageState extends State<HomePage> {
   List allUserAlarms = [];
   final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
+  List<Contact> contacts = [];
+  late List<Contact> contactsWithApp = [];
+
+  getAllContactsInPhone() async {
+    List<Contact> phonecontacts =
+        await ContactsService.getContacts(withThumbnails: false);
+    setState(() {
+      contacts = phonecontacts;
+    });
+    print('CONTACTSSSSS:;:::::;$contacts');
+    getContactsWithApp();
+  }
+
+  getContactsWithApp() async {
+    var userData = await FirebaseFirestore.instance.collection("users").get();
+    late List allUserPhones = [];
+    late List allContacts = [];
+
+    for (var userData in userData.docs) {
+      allUserPhones.add(userData.data()['phone']);
+    }
+
+    for (var contact in contacts) {
+      if (contact.phones!.isEmpty) {
+      } else {
+        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
+      }
+    }
+
+    List userContactsWithApp = allUserPhones
+        .where((element) => allContacts.contains(element))
+        .toList();
+
+    // print('All contacts from backend: $allUserPhones');
+    // print('All contacts from phone: $allContacts');
+    // print('User contacts with the app : $userContactsWithApp');
+
+    late List tempHolder = [];
+    for (var contact in userContactsWithApp) {
+      List<Contact> tempHoldery =
+          contacts.where((element) => element.phones!.isNotEmpty).toList();
+      List<Contact> filtered = tempHoldery
+          .where((element) =>
+              element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
+          .toList();
+
+      tempHolder.add(filtered);
+    }
+    for (var contact in tempHolder) {
+      setState(() {
+        contactsWithApp.add(contact[0]);
+      });
+    }
+
+    print('CONTACTSSSSSSS WITH APP:::::$contactsWithApp');
+  }
 
   getPhonesWithPermission() async {
     final FirebaseAuth auth = FirebaseAuth.instance;
@@ -127,7 +186,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
+    getAllContactsInPhone();
     getUserName();
     AlarmHelper alarmHelper = AlarmHelper();
     alarmHelper.updateAudioState('NO', 'PANAMA');
@@ -135,6 +194,88 @@ class _HomePageState extends State<HomePage> {
     getPhonesWithPermission();
 
     context.read<AllAlarmsCubit>().getAllUSeralarms();
+  }
+
+  void modalBottomSheetMenu2() {
+    showModalBottomSheet(
+        backgroundColor: const Color(0xFFF9F9F9),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(70),
+          ),
+        ),
+        context: context,
+        builder: (builder) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9F9F9),
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(70),
+              ),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 20.0, left: 20),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: SvgPicture.asset('assets/icons/cancel.svg',
+                              height: 6,
+                              color: Colors.black,
+                              fit: BoxFit.fitHeight),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 10.0,
+                  ),
+                  child: Center(
+                    child: Text('Select from these contacts in your phone',
+                        style: TextStyle(
+                          color: Color(0xFF7689D6),
+                          fontFamily: 'Skranji',
+                          fontSize: 18,
+                        )),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 20.0,
+                  ),
+                  child: Center(
+                    child: Text('They have installed the app',
+                        style: TextStyle(
+                          color: Color(0xFFBC343E),
+                          fontFamily: 'Skranji',
+                          fontSize: 18,
+                        )),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView(
+                      children: contactsWithApp
+                          .map(
+                            (user) => SingleContact2(
+                              user: user,
+                            ),
+                          )
+                          .toList()),
+                ),
+              ],
+            ),
+          );
+        });
   }
 
   void modalBottomSheetMenu() {
@@ -266,18 +407,31 @@ class _HomePageState extends State<HomePage> {
       listener: (context, state) {},
       builder: (context, state) {
         return Scaffold(
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: const Color(0xFF7689D6),
-            onPressed: () {
-              modalBottomSheetMenu();
-            },
-            child: SizedBox(
-              height: 20,
-              width: 20,
-              child: SvgPicture.asset('assets/icons/add.svg',
-                  color: Colors.white, fit: BoxFit.fitHeight),
-            ),
-          ),
+          floatingActionButton: currentIndex == 2
+              ? FloatingActionButton(
+                  backgroundColor: const Color(0xFF7689D6),
+                  onPressed: () {
+                    modalBottomSheetMenu2();
+                  },
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: SvgPicture.asset('assets/icons/add.svg',
+                        color: Colors.white, fit: BoxFit.fitHeight),
+                  ),
+                )
+              : FloatingActionButton(
+                  backgroundColor: const Color(0xFF7689D6),
+                  onPressed: () {
+                    modalBottomSheetMenu();
+                  },
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: SvgPicture.asset('assets/icons/add.svg',
+                        color: Colors.white, fit: BoxFit.fitHeight),
+                  ),
+                ),
           // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
           appBar: AppBar(
             automaticallyImplyLeading: false,
@@ -380,6 +534,27 @@ class _HomePageState extends State<HomePage> {
                     onTap: () {
                       setState(() {
                         currentIndex = 2;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Instant Voice Notice',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentIndex = 3;
                       });
                       Navigator.of(context).pop();
                     },
@@ -569,6 +744,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const CreatedAlarms(),
+            const InstantVoiceNotice(),
             const ContactsPermissions(),
             const OnboardingScreen(),
           ][currentIndex],
@@ -982,6 +1158,87 @@ class SingleContact extends StatelessWidget {
                         width: 20,
                       ),
                       Text('${user['userName']}',
+                          style: const TextStyle(
+                            color: Color(0xCC385A64),
+                            fontFamily: 'Skranji',
+                            fontSize: 18,
+                          )),
+                    ],
+                  ),
+                )),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class SingleContact2 extends StatelessWidget {
+  const SingleContact2({
+    Key? key,
+    required this.user,
+  }) : super(key: key);
+
+  final Contact user;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          const EdgeInsets.only(bottom: 10.0, right: 50, left: 50, top: 10.0),
+      child: OpenContainer(
+        closedColor: const Color(0xFFF9F9F9),
+        closedElevation: 0,
+        transitionDuration: const Duration(seconds: 1),
+        openBuilder: (BuildContext context, _) => RecordingPage2(
+          contact: user,
+        ),
+        closedBuilder: (context, VoidCallback openContainer) {
+          return InkWell(
+            onTap: openContainer,
+            child: Container(
+                height: 50,
+                width: 300,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(40),
+                    topRight: Radius.circular(40),
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  border: Border.all(
+                    color: const Color(0x0D000000),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                          height: 40,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xCC385A64),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(100)),
+                            border: Border.all(
+                              color: Colors.black12, width: 4,
+                              // 1.5
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(user.displayName![0],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Skranji',
+                                  fontSize: 18,
+                                )),
+                          )),
+                      const SizedBox(
+                        width: 20,
+                      ),
+                      Text('${user.displayName}',
                           style: const TextStyle(
                             color: Color(0xCC385A64),
                             fontFamily: 'Skranji',
