@@ -20,7 +20,8 @@ mixin _$AllAlarmsState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms) loaded,
+    required TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)
+        loaded,
     required TResult Function(String Message) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -28,7 +29,7 @@ mixin _$AllAlarmsState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -36,7 +37,7 @@ mixin _$AllAlarmsState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
     required TResult orElse(),
   }) =>
@@ -126,7 +127,8 @@ class _$_Initial implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms) loaded,
+    required TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)
+        loaded,
     required TResult Function(String Message) error,
   }) {
     return initial();
@@ -137,7 +139,7 @@ class _$_Initial implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
   }) {
     return initial?.call();
@@ -148,7 +150,7 @@ class _$_Initial implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
     required TResult orElse(),
   }) {
@@ -241,7 +243,8 @@ class _$_Loading implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms) loaded,
+    required TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)
+        loaded,
     required TResult Function(String Message) error,
   }) {
     return loading();
@@ -252,7 +255,7 @@ class _$_Loading implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
   }) {
     return loading?.call();
@@ -263,7 +266,7 @@ class _$_Loading implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
     required TResult orElse(),
   }) {
@@ -319,7 +322,7 @@ abstract class _Loading implements AllAlarmsState {
 abstract class _$$_LoadedCopyWith<$Res> {
   factory _$$_LoadedCopyWith(_$_Loaded value, $Res Function(_$_Loaded) then) =
       __$$_LoadedCopyWithImpl<$Res>;
-  $Res call({List<dynamic> allAlarms});
+  $Res call({List<dynamic> allAlarms, List<dynamic> userNames});
 }
 
 /// @nodoc
@@ -334,11 +337,16 @@ class __$$_LoadedCopyWithImpl<$Res> extends _$AllAlarmsStateCopyWithImpl<$Res>
   @override
   $Res call({
     Object? allAlarms = freezed,
+    Object? userNames = freezed,
   }) {
     return _then(_$_Loaded(
       allAlarms == freezed
           ? _value._allAlarms
           : allAlarms // ignore: cast_nullable_to_non_nullable
+              as List<dynamic>,
+      userNames == freezed
+          ? _value._userNames
+          : userNames // ignore: cast_nullable_to_non_nullable
               as List<dynamic>,
     ));
   }
@@ -347,7 +355,9 @@ class __$$_LoadedCopyWithImpl<$Res> extends _$AllAlarmsStateCopyWithImpl<$Res>
 /// @nodoc
 
 class _$_Loaded implements _Loaded {
-  const _$_Loaded(final List<dynamic> allAlarms) : _allAlarms = allAlarms;
+  const _$_Loaded(final List<dynamic> allAlarms, final List<dynamic> userNames)
+      : _allAlarms = allAlarms,
+        _userNames = userNames;
 
   final List<dynamic> _allAlarms;
   @override
@@ -356,9 +366,16 @@ class _$_Loaded implements _Loaded {
     return EqualUnmodifiableListView(_allAlarms);
   }
 
+  final List<dynamic> _userNames;
+  @override
+  List<dynamic> get userNames {
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_userNames);
+  }
+
   @override
   String toString() {
-    return 'AllAlarmsState.loaded(allAlarms: $allAlarms)';
+    return 'AllAlarmsState.loaded(allAlarms: $allAlarms, userNames: $userNames)';
   }
 
   @override
@@ -367,12 +384,16 @@ class _$_Loaded implements _Loaded {
         (other.runtimeType == runtimeType &&
             other is _$_Loaded &&
             const DeepCollectionEquality()
-                .equals(other._allAlarms, _allAlarms));
+                .equals(other._allAlarms, _allAlarms) &&
+            const DeepCollectionEquality()
+                .equals(other._userNames, _userNames));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_allAlarms));
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(_allAlarms),
+      const DeepCollectionEquality().hash(_userNames));
 
   @JsonKey(ignore: true)
   @override
@@ -384,10 +405,11 @@ class _$_Loaded implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms) loaded,
+    required TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)
+        loaded,
     required TResult Function(String Message) error,
   }) {
-    return loaded(allAlarms);
+    return loaded(allAlarms, userNames);
   }
 
   @override
@@ -395,10 +417,10 @@ class _$_Loaded implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
   }) {
-    return loaded?.call(allAlarms);
+    return loaded?.call(allAlarms, userNames);
   }
 
   @override
@@ -406,12 +428,12 @@ class _$_Loaded implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(allAlarms);
+      return loaded(allAlarms, userNames);
     }
     return orElse();
   }
@@ -455,9 +477,11 @@ class _$_Loaded implements _Loaded {
 }
 
 abstract class _Loaded implements AllAlarmsState {
-  const factory _Loaded(final List<dynamic> allAlarms) = _$_Loaded;
+  const factory _Loaded(
+      final List<dynamic> allAlarms, final List<dynamic> userNames) = _$_Loaded;
 
   List<dynamic> get allAlarms;
+  List<dynamic> get userNames;
   @JsonKey(ignore: true)
   _$$_LoadedCopyWith<_$_Loaded> get copyWith =>
       throw _privateConstructorUsedError;
@@ -527,7 +551,8 @@ class _$_Error implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms) loaded,
+    required TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)
+        loaded,
     required TResult Function(String Message) error,
   }) {
     return error(Message);
@@ -538,7 +563,7 @@ class _$_Error implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
   }) {
     return error?.call(Message);
@@ -549,7 +574,7 @@ class _$_Error implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms)? loaded,
+    TResult Function(List<dynamic> allAlarms, List<dynamic> userNames)? loaded,
     TResult Function(String Message)? error,
     required TResult orElse(),
   }) {

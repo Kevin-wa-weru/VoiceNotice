@@ -34,7 +34,7 @@ class _SetNameState extends State<SetName> {
           const Center(
             child: Text('Enter Your username',
                 style: TextStyle(
-                  color: Color(0xFF7689D6),
+                  color: Colors.green,
                   fontFamily: 'Skranji',
                   fontSize: 18,
                 )),
@@ -139,7 +139,7 @@ class _SetNameState extends State<SetName> {
               width: MediaQuery.of(context).size.width * 0.7,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: const Color(0xFF7689D6),
+                color: Colors.green,
               ),
               child: const Center(
                 child: Text('Proceed to Voice Notice',

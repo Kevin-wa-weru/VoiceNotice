@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String tableAlarm = 'alarm';
-
 const String columnId = 'id';
 const String columnTitle = 'title';
 const String columnDateTime = 'alarmDateTime';
@@ -11,6 +10,10 @@ const String columnMinute = 'minute';
 const String columnCreator = 'creator';
 const String columnAudioPath = 'audioPath';
 const String columnfileRef = 'fileRef';
+
+const String tableMessage = 'message';
+const String columnMessageid = 'id';
+const String columnRecordUrl = 'recordUrl';
 
 const String tableAudioState = 'audioState';
 const String columnAudioId = 'idi';
@@ -68,9 +71,9 @@ class AlarmHelper {
           $columnAudioState text not null)
         ''');
         await db.execute('''
-          create table $tableUserName ( 
-          $columnUserid integer primary key, 
-          $columnUserNameID text not null)
+          create table $tableMessage ( 
+          $columnMessageid integer primary key autoincrement, 
+          $columnRecordUrl text not null)
         ''');
       },
     );
@@ -97,6 +100,13 @@ class AlarmHelper {
     debugPrint('result IN ALARM HELPER AUDIO STATE : $result');
   }
 
+  void insertMessage(MessageInfo message) async {
+    // ignore: unnecessary_this
+    var db = await this.database;
+    var result = await db.insert(tableMessage, message.toMap());
+    debugPrint('result IN ALARM HELPER AUDIO STATE : $result');
+  }
+
   Future<List<AlarmInfo>> getAlarms() async {
     List<AlarmInfo> alarms = [];
 
@@ -110,6 +120,21 @@ class AlarmHelper {
     });
 
     return alarms;
+  }
+
+  Future<List<MessageInfo>> getMessages() async {
+    List<MessageInfo> messages = [];
+
+    // ignore: unnecessary_this
+    var db = await this.database;
+    var result = await db.query(tableMessage);
+    // ignore: avoid_function_literals_in_foreach_calls
+    result.forEach((element) {
+      var messageInfo = MessageInfo.fromMap(element);
+      messages.add(messageInfo);
+    });
+
+    return messages;
   }
 
   Future<List<PlayerStating>> getAudioState() async {
@@ -161,6 +186,19 @@ class AlarmHelper {
     var db = await this.database;
     var queryResult = await db
         .rawQuery('SELECT * FROM $tableAlarm WHERE $columnfileRef="$fileRef"');
+
+    if (queryResult.isEmpty) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  Future<bool> checkIfMessageExists(recordRef) async {
+    // ignore: unnecessary_this
+    var db = await this.database;
+    var queryResult = await db.rawQuery(
+        'SELECT * FROM $tableMessage WHERE $columnRecordUrl="$recordRef"');
 
     if (queryResult.isEmpty) {
       return false;
@@ -233,6 +271,25 @@ class AlarmInfo {
       };
 }
 
+class MessageInfo {
+  int? id;
+  String? recordUrl;
+
+  MessageInfo({
+    this.id,
+    this.recordUrl,
+  });
+
+  factory MessageInfo.fromMap(Map<String, dynamic> json) => MessageInfo(
+        id: json["id"],
+        recordUrl: json["recordUrl"],
+      );
+  Map<String, dynamic> toMap() => {
+        "id": id,
+        "recordUrl": recordUrl,
+      };
+}
+
 class PlayerStating {
   int? idi;
   String? constName;
@@ -274,9 +331,3 @@ class UserName {
         "userID": userID,
       };
 }
-
-
-
-// db.execute('CREATE TABLE $tableAlarm($columnId INTEGER PRIMARY KEY AUTOINCREMENT, $columnTitle TEXT, $columnDateTime TEXT, $columnHour INTEGER, $columnMinute INTEGER ,$columnCreator TEXT, $columnAudioPath TEXT, $columnfileRef TEXT)');
-//   db.execute('CREATE TABLE $database($columnAudioId INTEGER PRIMARY KEY, $columnAudioConstName TEXT, $columnAudioState TEXT )');
-   

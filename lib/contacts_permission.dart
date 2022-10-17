@@ -2,7 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_with_app_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_without_app_cubit.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ContactsPermissions extends StatefulWidget {
   const ContactsPermissions({
@@ -78,109 +82,7 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    getAllContactsInPhone();
-
-    // getContactsWithoutApp();
-  }
-
-  getAllContactsInPhone() async {
-    List<Contact> phonecontacts =
-        await ContactsService.getContacts(withThumbnails: false);
-    setState(() {
-      contacts = phonecontacts;
-    });
-
-    getContactsWithApp();
-  }
-
-  getContactsWithApp() async {
-    var userData = await FirebaseFirestore.instance.collection("users").get();
-    late List allUserPhones = [];
-    late List allContacts = [];
-
-    for (var userData in userData.docs) {
-      allUserPhones.add(userData.data()['phone']);
-    }
-
-    for (var contact in contacts) {
-      if (contact.phones!.isEmpty) {
-      } else {
-        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
-      }
-    }
-
-    List userContactsWithApp = allUserPhones
-        .where((element) => allContacts.contains(element))
-        .toList();
-
-    // print('All contacts from backend: $allUserPhones');
-    // print('All contacts from phone: $allContacts');
-    // print('User contacts with the app : $userContactsWithApp');
-
-    late List tempHolder = [];
-    for (var contact in userContactsWithApp) {
-      List<Contact> tempHoldery =
-          contacts.where((element) => element.phones!.isNotEmpty).toList();
-      List<Contact> filtered = tempHoldery
-          .where((element) =>
-              element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
-          .toList();
-
-      tempHolder.add(filtered);
-    }
-    for (var contact in tempHolder) {
-      setState(() {
-        contactsWithApp.add(contact[0]);
-      });
-    }
-
-    getContactsWithoutApp();
-  }
-
-  getContactsWithoutApp() async {
-    var userData = await FirebaseFirestore.instance.collection("users").get();
-
-    List allUserPhones = [];
-    List allContacts = [];
-
-    for (var userData in userData.docs) {
-      allUserPhones.add(userData.data()['phone']);
-    }
-
-    for (var contact in contacts) {
-      if (contact.phones!.isEmpty) {
-      } else {
-        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
-      }
-    }
-
-    List difference =
-        allContacts.toSet().difference(allUserPhones.toSet()).toList();
-
-    late List tempHolder = [];
-    for (var contact in difference) {
-      List<Contact> tempHoldery =
-          contacts.where((element) => element.phones!.isNotEmpty).toList();
-      List<Contact> filtered = tempHoldery
-          .where((element) =>
-              element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
-          .toList();
-
-      tempHolder.add(filtered);
-    }
-
-    for (var contact in tempHolder) {
-      setState(() {
-        contactsWithOutApp.add(contact[0]);
-      });
-    }
-  }
-
   Future toggleCreateAlarmPermission(phoneNumber, bool value) async {
-    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
     if (value == true) {
@@ -212,7 +114,6 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
 
-    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
     if (value == true) {
       final CollectionReference userRef =
           FirebaseFirestore.instance.collection("users");
@@ -239,7 +140,6 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
   }
 
   toggleDeleteAlarmPermission(phoneNumber, bool value) async {
-    // String testUser = 'RBlD6eB8zVPhPvxz1czJkxi44Es1';
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
     if (value == true) {
@@ -267,64 +167,529 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
     }
   }
 
+  final RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
+
+  bool isFetching = false;
+  void _onRefresh() async {
+    setState(() {
+      isFetching = true;
+    });
+    // await Future.delayed(const Duration(milliseconds: 1000));
+    await context.read<ContactsWithAppCubit>().getContactsWithApp();
+    // ignore: use_build_context_synchronously
+    await context.read<ContactsWithoutAppCubit>().getContactsWithoutApp();
+    setState(() {
+      isFetching = false;
+    });
+    _refreshController.refreshCompleted();
+  }
+
+  void _onLoading() async {
+    if (isFetching == true) {
+    } else {
+      setState(() {});
+      _refreshController.loadComplete();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-          child: Column(
-        children: [
-          const SizedBox(
-            height: 10,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
-            child: Row(
-              children: const [
-                Text('These are all your contacts ',
-                    style: TextStyle(
-                      color: Color(0xCC385A64),
-                      fontFamily: 'Skranji',
-                      fontSize: 18,
-                    )),
-              ],
+      body: SmartRefresher(
+        enablePullDown: true,
+        enablePullUp: true,
+        header: const WaterDropHeader(),
+        controller: _refreshController,
+        onRefresh: _onRefresh,
+        onLoading: _onLoading,
+        child: SingleChildScrollView(
+            child: Column(
+          children: [
+            const SizedBox(
+              height: 10,
             ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
-            child: Row(
-              children: const [
-                Text('With Voice notice',
-                    style: TextStyle(
-                      color: Color(0xCC385A64),
-                      fontFamily: 'Skranji',
-                      fontSize: 18,
-                    )),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(left: 20.0),
+              child: Row(
+                children: const [
+                  Text('These are all your contacts ',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 18,
+                      )),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: ExpansionPanelList.radio(
-                dividerColor: Colors.transparent,
-                elevation: 0,
-                children: contactsWithApp
-                    .map((contact) => ExpansionPanelRadio(
-                        canTapOnHeader: true,
-                        backgroundColor: const Color(0xffF9F9F9),
-                        value: contact.phones![0].value!,
-                        headerBuilder: (context, isExpanded) {
+            const SizedBox(
+              height: 10,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 20.0),
+              child: Row(
+                children: const [
+                  Text('With Voice notice',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 18,
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            BlocBuilder<ContactsWithAppCubit, ContactsWithAppState>(
+              builder: (context, state) {
+                return state.when(
+                    initial: () {
+                      return const Center(
+                          child: CircularProgressIndicator(
+                        color: Color(0xCC385A64),
+                        strokeWidth: 5,
+                      ));
+                    },
+                    loading: () {
+                      return const Center(
+                          child: CircularProgressIndicator(
+                        color: Color(0xCC385A64),
+                        strokeWidth: 5,
+                      ));
+                    },
+                    loaded: (contactsWithInstalledApp) {
+                      contactsWithApp = contactsWithInstalledApp;
+
+                      if (contactsWithApp.isEmpty) {
+                        return Container();
+                      } else {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: ExpansionPanelList.radio(
+                              dividerColor: Colors.transparent,
+                              elevation: 0,
+                              children: contactsWithInstalledApp
+                                  .map((contact) => ExpansionPanelRadio(
+                                      canTapOnHeader: true,
+                                      backgroundColor: const Color(0xffF9F9F9),
+                                      value: contact.phones![0].value!,
+                                      headerBuilder: (context, isExpanded) {
+                                        return ListTile(
+                                          leading: Container(
+                                              height: 40,
+                                              width: 40,
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(100)),
+                                                border: Border.all(
+                                                  color: Colors.black12,
+                                                  width: 4,
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                    contact.displayName![0],
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontFamily: 'Skranji',
+                                                      fontSize: 18,
+                                                    )),
+                                              )),
+                                          title: Row(
+                                            children: [
+                                              Text('${contact.displayName}',
+                                                  style: const TextStyle(
+                                                    color: Colors.black54,
+                                                    fontFamily: 'Skranji',
+                                                    fontSize: 15,
+                                                  )),
+                                            ],
+                                          ),
+                                          subtitle: Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4.0),
+                                            child:
+                                                Text(contact.phones![0].value!,
+                                                    style: const TextStyle(
+                                                      color: Color(0xCC385A64),
+                                                      fontFamily: 'Skranji',
+                                                      fontSize: 15,
+                                                    )),
+                                          ),
+                                        );
+                                      },
+                                      body: Container(
+                                        color: const Color(0xffF9F9F9),
+                                        child: Column(
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 40.0),
+                                              child: Row(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      FutureBuilder<bool>(
+                                                          future:
+                                                              resolveIFCanCreeateAlarm(
+                                                                  contact
+                                                                      .phones![
+                                                                          0]
+                                                                      .value!),
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            switch (snapshot
+                                                                .connectionState) {
+                                                              case ConnectionState
+                                                                  .waiting:
+                                                                if (snapshot
+                                                                    .hasData) {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) async {
+                                                                        await toggleCreateAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value:
+                                                                          false,
+                                                                      onChanged:
+                                                                          (value) async {
+                                                                        await toggleCreateAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+
+                                                              default:
+                                                                if (snapshot
+                                                                    .hasError) {
+                                                                  return Text(
+                                                                      'Error: ${snapshot.error}');
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) async {
+                                                                        await toggleCreateAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+                                                            }
+                                                          }),
+                                                      const SizedBox(
+                                                        width: 10,
+                                                      ),
+                                                      const Text(
+                                                          'Can create Alarm',
+                                                          style: TextStyle(
+                                                            color: Color(
+                                                                0xCC385A64),
+                                                            fontFamily:
+                                                                'Skranji',
+                                                            fontSize: 18,
+                                                          )),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 40.0),
+                                              child: Row(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      FutureBuilder<bool>(
+                                                          future:
+                                                              resolveIFCanEditAlarm(
+                                                                  contact
+                                                                      .phones![
+                                                                          0]
+                                                                      .value!),
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            switch (snapshot
+                                                                .connectionState) {
+                                                              case ConnectionState
+                                                                  .waiting:
+                                                                if (snapshot
+                                                                    .hasData) {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleEditAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value:
+                                                                          false,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleEditAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+
+                                                              default:
+                                                                if (snapshot
+                                                                    .hasError) {
+                                                                  return Text(
+                                                                      'Error: ${snapshot.error}');
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleEditAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+                                                            }
+                                                          }),
+                                                      const SizedBox(
+                                                        width: 10,
+                                                      ),
+                                                      const Text(
+                                                          'Can edit Alarm',
+                                                          style: TextStyle(
+                                                            color: Color(
+                                                                0xCC385A64),
+                                                            fontFamily:
+                                                                'Skranji',
+                                                            fontSize: 18,
+                                                          )),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 40.0),
+                                              child: Row(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      FutureBuilder<bool>(
+                                                          future:
+                                                              resolveIFCanDeleteAlarm(
+                                                                  contact
+                                                                      .phones![
+                                                                          0]
+                                                                      .value!),
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            switch (snapshot
+                                                                .connectionState) {
+                                                              case ConnectionState
+                                                                  .waiting:
+                                                                if (snapshot
+                                                                    .hasData) {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleDeleteAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value:
+                                                                          false,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleDeleteAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+
+                                                              default:
+                                                                if (snapshot
+                                                                    .hasError) {
+                                                                  return Text(
+                                                                      'Error: ${snapshot.error}');
+                                                                } else {
+                                                                  return Checkbox(
+                                                                      checkColor:
+                                                                          Colors
+                                                                              .white,
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .yellow,
+                                                                      value: snapshot
+                                                                          .data,
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        toggleDeleteAlarmPermission(
+                                                                            contact.phones![0].value!,
+                                                                            value!);
+                                                                      });
+                                                                }
+                                                            }
+                                                          }),
+                                                      const SizedBox(
+                                                        width: 10,
+                                                      ),
+                                                      const Text(
+                                                          'Can delete Alarm',
+                                                          style: TextStyle(
+                                                            color: Color(
+                                                                0xCC385A64),
+                                                            fontFamily:
+                                                                'Skranji',
+                                                            fontSize: 18,
+                                                          )),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      )))
+                                  .toList()),
+                        );
+                      }
+                    },
+                    error: (String message) => Center(
+                          child: Text(message),
+                        ));
+              },
+            ),
+            const SizedBox(
+              height: 30,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 20.0),
+              child: Row(
+                children: const [
+                  Text('These contacts do not have ',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 18,
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 20.0),
+              child: Row(
+                children: const [
+                  Text('Voice Notice installed',
+                      style: TextStyle(
+                        color: Color(0xCC385A64),
+                        fontFamily: 'Skranji',
+                        fontSize: 18,
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            BlocBuilder<ContactsWithoutAppCubit, ContactsWithoutAppState>(
+              builder: (context, state) {
+                return state.when(
+                  initial: () {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      color: Color(0xCC385A64),
+                      strokeWidth: 5,
+                    ));
+                  },
+                  loading: () {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      color: Color(0xCC385A64),
+                      strokeWidth: 5,
+                    ));
+                  },
+                  loaded: (contactsNotInstalled) {
+                    contactsWithOutApp = contactsNotInstalled;
+                    if (contactsWithOutApp.isEmpty) {
+                      return Container();
+                    } else {
+                      return Column(
+                        children: contactsNotInstalled.map((contact) {
                           return ListTile(
                             leading: Container(
                                 height: 40,
                                 width: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xCC385A64),
+                                  color: Colors.green,
                                   borderRadius: const BorderRadius.all(
                                       Radius.circular(100)),
                                   border: Border.all(
@@ -340,27 +705,12 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                         fontSize: 18,
                                       )),
                                 )),
-                            title: Row(
-                              children: [
-                                Text('${contact.displayName}',
-                                    style: const TextStyle(
-                                      color: Color(0xFF7689D6),
-                                      fontFamily: 'Skranji',
-                                      fontSize: 15,
-                                    )),
-                                // const SizedBox(
-                                //   width: 8,
-                                // ),
-                                // const SizedBox(
-                                //   height: 10.0,
-                                //   width: 10.0,
-                                //   child: CircularProgressIndicator(
-                                //     color: Color(0xFF7689D6),
-                                //     strokeWidth: 2.0,
-                                //   ),
-                                // ),
-                              ],
-                            ),
+                            title: Text('${contact.displayName}',
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontFamily: 'Skranji',
+                                  fontSize: 15,
+                                )),
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(contact.phones![0].value!,
@@ -370,383 +720,47 @@ class _ContactsPermissionsState extends State<ContactsPermissions> {
                                     fontSize: 15,
                                   )),
                             ),
+                            trailing: InkWell(
+                              onTap: () {
+                                // ignore: deprecated_member_use
+                                launch(
+                                    'sms:${contact.phones![0].value!}?body=Join Voice Notice to send voice recordings as Alarms to friends');
+                              },
+                              child: Container(
+                                  height: 40,
+                                  width: 70,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD9D9D9),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(15)),
+                                    border: Border.all(
+                                      color: Colors.black12,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Text('Invite',
+                                        style: TextStyle(
+                                          color: Color(0xCCBC343E),
+                                          fontFamily: 'Skranji',
+                                          fontSize: 18,
+                                        )),
+                                  )),
+                            ),
                           );
-                        },
-                        body: Container(
-                          color: const Color(0xffF9F9F9),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 40.0),
-                                child: Row(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        FutureBuilder<bool>(
-                                            future: resolveIFCanCreeateAlarm(
-                                                contact.phones![0].value!),
-                                            builder: (context, snapshot) {
-                                              switch (
-                                                  snapshot.connectionState) {
-                                                case ConnectionState.waiting:
-                                                  if (snapshot.hasData) {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged:
-                                                            (value) async {
-                                                          await toggleCreateAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: false,
-                                                        onChanged:
-                                                            (value) async {
-                                                          await toggleCreateAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-
-                                                default:
-                                                  if (snapshot.hasError) {
-                                                    return Text(
-                                                        'Error: ${snapshot.error}');
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged:
-                                                            (value) async {
-                                                          await toggleCreateAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-                                              }
-                                            }),
-                                        const SizedBox(
-                                          width: 10,
-                                        ),
-                                        const Text('Can create Alarm',
-                                            style: TextStyle(
-                                              color: Color(0xCC385A64),
-                                              fontFamily: 'Skranji',
-                                              fontSize: 18,
-                                            )),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 40.0),
-                                child: Row(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        FutureBuilder<bool>(
-                                            future: resolveIFCanEditAlarm(
-                                                contact.phones![0].value!),
-                                            builder: (context, snapshot) {
-                                              switch (
-                                                  snapshot.connectionState) {
-                                                case ConnectionState.waiting:
-                                                  if (snapshot.hasData) {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged: (value) {
-                                                          toggleEditAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: false,
-                                                        onChanged: (value) {
-                                                          toggleEditAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-
-                                                default:
-                                                  if (snapshot.hasError) {
-                                                    return Text(
-                                                        'Error: ${snapshot.error}');
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged: (value) {
-                                                          toggleEditAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-                                              }
-                                            }),
-                                        const SizedBox(
-                                          width: 10,
-                                        ),
-                                        const Text('Can edit Alarm',
-                                            style: TextStyle(
-                                              color: Color(0xCC385A64),
-                                              fontFamily: 'Skranji',
-                                              fontSize: 18,
-                                            )),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 40.0),
-                                child: Row(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        FutureBuilder<bool>(
-                                            future: resolveIFCanDeleteAlarm(
-                                                contact.phones![0].value!),
-                                            builder: (context, snapshot) {
-                                              switch (
-                                                  snapshot.connectionState) {
-                                                case ConnectionState.waiting:
-                                                  if (snapshot.hasData) {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged: (value) {
-                                                          toggleDeleteAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: false,
-                                                        onChanged: (value) {
-                                                          toggleDeleteAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-
-                                                default:
-                                                  if (snapshot.hasError) {
-                                                    return Text(
-                                                        'Error: ${snapshot.error}');
-                                                  } else {
-                                                    return Checkbox(
-                                                        checkColor:
-                                                            Colors.white,
-                                                        activeColor:
-                                                            const Color(
-                                                                0xFF7689D6),
-                                                        value: snapshot.data,
-                                                        onChanged: (value) {
-                                                          toggleDeleteAlarmPermission(
-                                                              contact.phones![0]
-                                                                  .value!,
-                                                              value!);
-                                                        });
-                                                  }
-                                              }
-                                            }),
-                                        const SizedBox(
-                                          width: 10,
-                                        ),
-                                        const Text('Can delete Alarm',
-                                            style: TextStyle(
-                                              color: Color(0xCC385A64),
-                                              fontFamily: 'Skranji',
-                                              fontSize: 18,
-                                            )),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        )))
-                    .toList()),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
-            child: Row(
-              children: const [
-                Text('These contacts do not have ',
-                    style: TextStyle(
-                      color: Color(0xCC385A64),
-                      fontFamily: 'Skranji',
-                      fontSize: 18,
-                    )),
-              ],
-            ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
-            child: Row(
-              children: const [
-                Text('Voice Notice installed',
-                    style: TextStyle(
-                      color: Color(0xCC385A64),
-                      fontFamily: 'Skranji',
-                      fontSize: 18,
-                    )),
-              ],
-            ),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Column(
-            children: contactsWithOutApp.map((contact) {
-              return ListTile(
-                leading: Container(
-                    height: 40,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xCC385A64),
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(100)),
-                      border: Border.all(
-                        color: Colors.black12,
-                        width: 4,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(contact.displayName![0],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Skranji',
-                            fontSize: 18,
-                          )),
-                    )),
-                title: Text('${contact.displayName}',
-                    style: const TextStyle(
-                      color: Color(0xFF7689D6),
-                      fontFamily: 'Skranji',
-                      fontSize: 15,
-                    )),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(contact.phones![0].value!,
-                      style: const TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 15,
-                      )),
-                ),
-                trailing: InkWell(
-                  onTap: () {
-                    // ignore: deprecated_member_use
-                    launch(
-                        'sms:${contact.phones![0].value!}?body=Join Voice Notice to send voice recordings as Alarms to friends');
+                        }).toList(),
+                      );
+                    }
                   },
-                  child: Container(
-                      height: 40,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD9D9D9),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(15)),
-                        border: Border.all(
-                          color: Colors.black12,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Text('Invite',
-                            style: TextStyle(
-                              color: Color(0xCCBC343E),
-                              fontFamily: 'Skranji',
-                              fontSize: 18,
-                            )),
-                      )),
-                ),
-              );
-            }).toList(),
-          )
-        ],
-      )),
+                  error: (String message) => Center(
+                    child: Text(message),
+                  ),
+                );
+              },
+            )
+          ],
+        )),
+      ),
     );
   }
 }
-
-
-
-// class SyncedContacts {
-//   final UserDetails? user;
-//   final String? name;
-//   final String? number;
-
-//   SyncedContacts({
-//     this.user,
-//     this.name,
-//     this.number,
-//   });
-
-//   @override
-//   bool operator ==(covariant SyncedContacts other) {
-//     if (identical(this, other)) return true;
-
-//     return other.user == user && other.name == name && other.number == number;
-//   }
-
-//   @override
-//   int get hashCode => user.hashCode ^ name.hashCode ^ number.hashCode;
-// }

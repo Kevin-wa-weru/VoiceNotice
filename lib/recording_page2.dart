@@ -38,7 +38,7 @@ class _RecordingPage2State extends State<RecordingPage2> {
 
     return Text('$minutes:$seconds',
         style: const TextStyle(
-          color: Color(0xFF7689D6),
+          color: Color(0xCC385A64),
           fontFamily: 'Skranji',
           fontSize: 28,
         ));
@@ -56,6 +56,7 @@ class _RecordingPage2State extends State<RecordingPage2> {
   final player = SoundPlayer();
   bool isPlaying = false;
 
+  // ignore: unused_field
   TimeOfDay _time = TimeOfDay.now().replacing(hour: 11, minute: 30);
   bool iosStyle = true;
 
@@ -185,7 +186,8 @@ class _RecordingPage2State extends State<RecordingPage2> {
                                     child: Row(
                                       children: [
                                         Text(
-                                            'voice notice for ${widget.contact.displayName}',
+                                            overflow: TextOverflow.ellipsis,
+                                            'voice notice for ${widget.contact.displayName!.split(" ")[0]}',
                                             style: const TextStyle(
                                               color: Color(0xCC385A64),
                                               fontFamily: 'Skranji',
@@ -246,7 +248,7 @@ class _RecordingPage2State extends State<RecordingPage2> {
                                       child: SvgPicture.asset(
                                           'assets/icons/microphone.svg',
                                           height: 6,
-                                          color: const Color(0xFFBC343E),
+                                          color: Colors.green,
                                           fit: BoxFit.fitHeight),
                                     ),
                                     const SizedBox(
@@ -298,8 +300,8 @@ class _RecordingPage2State extends State<RecordingPage2> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
                                 color: isRecording
-                                    ? const Color(0xFFBC343E)
-                                    : const Color(0xFF7689D6),
+                                    ? Colors.green
+                                    : const Color(0xCC385A64),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -346,8 +348,8 @@ class _RecordingPage2State extends State<RecordingPage2> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
                                 color: isPlaying
-                                    ? const Color(0xFFBC343E)
-                                    : const Color(0xFF7689D6),
+                                    ? Colors.green
+                                    : const Color(0xCC385A64),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -407,10 +409,12 @@ class _RecordingPage2State extends State<RecordingPage2> {
                   FirebaseFirestore.instance.collection("users");
 
               //get userid of the phone to pass as targetUser id
+              print(widget.contact.phones![0].value!);
               var snapshot = await usersRef
                   .where('phone',
                       isEqualTo: widget.contact.phones![0].value!
-                          .replaceAll(RegExp(' '), ''))
+                          .replaceAll(RegExp(' '), '')
+                          .replaceAll(RegExp('-'), ''))
                   .get();
 
               var userID = snapshot.docs.first.id;
@@ -427,12 +431,11 @@ class _RecordingPage2State extends State<RecordingPage2> {
               await alarmRef.add({
                 'DateTime': DateTime.now(),
                 'RecordUrl': audioUrl,
-                'audioCompleteUrl':
-                    'https://firebasestorage.googleapis.com/v0/b/voicenote-1784f.appspot.com/o/Audios%2Fkarate.mp3?alt=media&token=35125165-6f99-4459-8539-e10d5b4fc32c',
+                'audioCompleteUrl': audioCompleteUrl,
                 'CreateByUserID': user!.uid,
                 'createdByUserName': user.displayName,
                 'createdByPhoneNUmber': user.phoneNumber,
-                'TargetUserid': user.uid,
+                'TargetUserid': userID,
                 "createdForUserName": specificUser[0],
                 'createdForPhoneNUmber': widget.contact.phones![0].value!,
               });
@@ -468,7 +471,7 @@ class _RecordingPage2State extends State<RecordingPage2> {
                 width: MediaQuery.of(context).size.width * 0.7,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: const Color(0xFF7689D6),
+                  color: Colors.green,
                 ),
                 child: appisLoading == true
                     ? const Center(

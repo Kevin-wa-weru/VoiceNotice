@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
-
+//add
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -11,8 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_with_app_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_with_permission_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_without_app_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:voicenotice/Cubits/cubit/received_message_cubit.dart';
@@ -27,8 +31,9 @@ import 'Cubits/cubit/create_alarms_cubit.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await initializeService();
-
+  MobileAds.instance.initialize();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   var initializationSettingsAndroid =
@@ -45,27 +50,26 @@ Future main() async {
       alarmHelper.deleteAudioState(audioState.first.constName!);
     });
   });
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final User? user = auth.currentUser;
 
-  await Firebase.initializeApp();
+  late String userid = '';
+  if (user == null) {
+    userid = '';
+  } else {
+    userid = user.uid;
+  }
 
-  runApp(const MyApp());
+  runApp(MyApp(
+    userid: userid,
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
+  const MyApp({Key? key, required this.userid}) : super(key: key);
+  final String? userid;
   @override
   Widget build(BuildContext context) {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-
-    late String userid = '';
-    if (user == null) {
-      userid = '';
-    } else {
-      userid = user.uid;
-    }
-
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -83,6 +87,15 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (contex) => SentVoicesCubit(),
         ),
+        BlocProvider(
+          create: (contex) => ContactsWithPermissionCubit(),
+        ),
+        BlocProvider(
+          create: (contex) => ContactsWithAppCubit(),
+        ),
+        BlocProvider(
+          create: (contex) => ContactsWithoutAppCubit(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -96,35 +109,23 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// BACKGROUND SERVICES
-
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
   await service.configure(
     androidConfiguration: AndroidConfiguration(
-      // this will be executed when app is in foreground or background in separated isolate
       onStart: onStart,
-
-      // auto start service
       autoStart: true,
       isForegroundMode: true,
     ),
     iosConfiguration: IosConfiguration(
-      // auto start service
       autoStart: true,
-
-      // this will be executed when app is in foreground in separated isolate
       onForeground: onStart,
-
-      // you have to enable background fetch capability on xcode project
       onBackground: onIosBackground,
     ),
   );
   service.startService();
 }
 
-// to ensure this is executed
-// run app from xcode, then from xcode menu, select Simulate Background Fetch
 bool onIosBackground(ServiceInstance service) {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -132,11 +133,7 @@ bool onIosBackground(ServiceInstance service) {
 }
 
 void onStart(ServiceInstance service) async {
-  // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
-  // final player = AudioPlayer();
-  // For flutter prior to version 3.0.0
-  // We have to register the plugin manually
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -152,8 +149,6 @@ void onStart(ServiceInstance service) async {
     service.stopSelf();
   });
 
-  // bring to foreground
-
   late String userid = '';
   await Firebase.initializeApp();
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -164,54 +159,58 @@ void onStart(ServiceInstance service) async {
   } else {
     userid = user.uid;
   }
+  listenToIcomingMessage() async {
+    final player = AudioPlayer();
 
-  // listenToIcomingMessage() async {
-  //   final player = AudioPlayer();
-  //   print('MESSAGING BACKGROUND FUNCTION::::::::::::::::::::STARTED');
+    if (userid == '') {
+      debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::IS EMPTY');
+    } else {
+      debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::$userid');
 
-  //   if (userid == '') {
-  //     debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::IS EMPTY');
-  //   } else {
-  //     debugPrint('BACKGROUNDDDDDDD NAME IN MESSAGING:::::::::$userid');
-  //     // var userData = await FirebaseFirestore.instance
-  //     //     .collection("messages")
-  //     //     .where('TargetUserid', isEqualTo: userid)
-  //     //     .get();
+      final docRef = FirebaseFirestore.instance
+          .collection("messages")
+          .where('TargetUserid', isEqualTo: userid);
+      docRef.snapshots(includeMetadataChanges: true).listen(
+        (event) async {
+          debugPrint("current data: ${event.docs}");
+          for (var message in event.docChanges) {
+            AlarmHelper alarmHelper = AlarmHelper();
+            bool messageExists = await alarmHelper
+                .checkIfMessageExists(message.doc.data()!['RecordUrl']);
 
-  //     final docRef = FirebaseFirestore.instance
-  //         .collection("messages")
-  //         .where('TargetUserid', isEqualTo: userid);
-  //     docRef.snapshots().listen(
-  //       (event) async {
-  //         print("current data: ${event.docs}");
-  //         for (var message in event.docChanges) {
-  //           print(message.doc.data());
-  //           Notificationed.showNotification(
-  //               title: 'New Voice Notice',
-  //               body: 'From ${message.doc.data()!['createdByUserName']}');
+            if (messageExists == true) {
+              debugPrint('Message Exixts');
+            } else {
+              await player.play(AssetSource('beyond.mp3'));
 
-  //           await player
-  //               .play(UrlSource(message.doc.data()!['audioCompleteUrl']));
-  //         }
-  //       },
-  //       onError: (error) => print("Listen failed: $error"),
-  //     );
-  //   }
-  // }
+              alarmHelper.insertMessage(
+                  MessageInfo(recordUrl: message.doc.data()!['RecordUrl']));
 
-  // listenToIcomingMessage();
+              Timer(const Duration(seconds: 4), () async {
+                await player
+                    .play(UrlSource(message.doc.data()!['audioCompleteUrl']));
+              });
 
-  Timer.periodic(const Duration(minutes: 20), (timer) async {
-    print('ALARM BACKGROUND FUNCTION::::::::::::::::::::STARTED');
-    if (service is AndroidServiceInstance) {
-      service.setForegroundNotificationInfo(
-        title: "My App Service",
-        content: "Updated at ${DateTime.now()}",
+              Notificationed.showNotification(
+                  title: 'New Voice Notice',
+                  body: 'From ${message.doc.data()!['createdByUserName']}');
+            }
+          }
+        },
+        onError: (error) => debugPrint("Listen failed: $error"),
       );
     }
+  }
 
-    debugPrint(
-        'BACKGROUND:::: USER HAS NO ALARMS SSDSDSDSDSDSDSDSDSDSDSDSDSDSDDSDSDSSDSDSDSDSDSDSDSDD$userid');
+  listenToIcomingMessage();
+
+  Timer.periodic(const Duration(minutes: 1), (timer) async {
+    // if (service is AndroidServiceInstance) {
+    //   service.setForegroundNotificationInfo(
+    //     title: "My App Service",
+    //     content: "Updated at ${DateTime.now()}",
+    //   );
+    // }
 
     if (userid == '') {
       debugPrint('BACKGROUNDDDDDDD NAME IN ALARMS:::::::::IS EMPTY');
@@ -222,7 +221,6 @@ void onStart(ServiceInstance service) async {
           .where('TargetUserid', isEqualTo: userid)
           .get();
 
-      // ignore: unnecessary_null_comparison
       if (userData.docs.isEmpty) {
         debugPrint('BACKGROUND:::: USER HAS NO ALARMS');
       } else {
@@ -303,7 +301,8 @@ void onStart(ServiceInstance service) async {
           debugPrint('BACKGROUND NOTIFICATION:::::::::::::::::${alarm.minute}');
           debugPrint(
               'BACKGROUND NOTIFICATION:::::::::::::::::${alarm.audioPath!}');
-          if (DateTime.now().hour == alarm.hour &&
+          if (DateTime.now().day == alarm.alarmDateTime!.day &&
+              DateTime.now().hour == alarm.hour &&
               DateTime.now().minute == alarm.minute) {
             alarmHelper.insertAudioState(PlayerStating(
               constName: 'PANAMA',
@@ -322,7 +321,6 @@ void onStart(ServiceInstance service) async {
       }
     }
 
-    // test using external plugin
     final deviceInfo = DeviceInfoPlugin();
     String? device;
     if (Platform.isAndroid) {

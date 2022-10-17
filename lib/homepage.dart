@@ -7,10 +7,14 @@ import 'package:day_night_time_picker/lib/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_with_app_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_with_permission_cubit.dart';
+import 'package:voicenotice/Cubits/cubit/contacts_without_app_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/contacts_permission.dart';
 import 'package:voicenotice/created_alarms.dart';
@@ -18,6 +22,7 @@ import 'package:voicenotice/instant_voice.dart';
 import 'package:voicenotice/onboarding.dart';
 import 'package:voicenotice/record.dart';
 import 'package:voicenotice/recording_page2.dart';
+import 'package:voicenotice/services/ads.dart';
 import 'package:voicenotice/services/alarm_helper.dart';
 
 class HomePage extends StatefulWidget {
@@ -28,85 +33,18 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List allUserAlarms = [];
   final AlarmHelper _alarmHelper = AlarmHelper();
   List? usersWithPermission = [];
-  List<Contact> contacts = [];
+  // List<Contact> contacts = [];
   late List<Contact> contactsWithApp = [];
-
-  getAllContactsInPhone() async {
-    List<Contact> phonecontacts =
-        await ContactsService.getContacts(withThumbnails: false);
-    setState(() {
-      contacts = phonecontacts;
-    });
-    print('CONTACTSSSSS:;:::::;$contacts');
-    getContactsWithApp();
-  }
-
-  getContactsWithApp() async {
-    var userData = await FirebaseFirestore.instance.collection("users").get();
-    late List allUserPhones = [];
-    late List allContacts = [];
-
-    for (var userData in userData.docs) {
-      allUserPhones.add(userData.data()['phone']);
-    }
-
-    for (var contact in contacts) {
-      if (contact.phones!.isEmpty) {
-      } else {
-        allContacts.add(contact.phones![0].value!.replaceAll(RegExp(' '), ''));
-      }
-    }
-
-    List userContactsWithApp = allUserPhones
-        .where((element) => allContacts.contains(element))
-        .toList();
-
-    // print('All contacts from backend: $allUserPhones');
-    // print('All contacts from phone: $allContacts');
-    // print('User contacts with the app : $userContactsWithApp');
-
-    late List tempHolder = [];
-    for (var contact in userContactsWithApp) {
-      List<Contact> tempHoldery =
-          contacts.where((element) => element.phones!.isNotEmpty).toList();
-      List<Contact> filtered = tempHoldery
-          .where((element) =>
-              element.phones![0].value!.replaceAll(RegExp(' '), '') == contact)
-          .toList();
-
-      tempHolder.add(filtered);
-    }
-    for (var contact in tempHolder) {
-      setState(() {
-        contactsWithApp.add(contact[0]);
-      });
-    }
-
-    print('CONTACTSSSSSSS WITH APP:::::$contactsWithApp');
-  }
-
-  getPhonesWithPermission() async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-
-    var userData = await FirebaseFirestore.instance
-        .collection("users")
-        .where('canCreate', arrayContains: user!.phoneNumber)
-        .get();
-    // late List allContactsThatGavePermission = [];
-
-    for (var user in userData.docs) {
-      usersWithPermission!.add(user.data());
-    }
-  }
 
   Future<void> _askContactsPermissions(String routeName) async {
     PermissionStatus permissionStatus = await _getContactPermission();
     if (permissionStatus == PermissionStatus.granted) {
+      // ignore: use_build_context_synchronously
+      context.read<AllAlarmsCubit>().getAllUSeralarms();
       await _getStoragePermission();
     } else {
       _handleInvalidPermissions(permissionStatus);
@@ -153,6 +91,12 @@ class _HomePageState extends State<HomePage> {
 
   Future _getStoragePermission() async {
     if (await Permission.storage.request().isGranted) {
+      // await getPhonesWithPermission();
+      context.read<ContactsWithPermissionCubit>().getPhonesWithPermission();
+      context.read<ContactsWithAppCubit>().getContactsWithApp();
+      context.read<ContactsWithoutAppCubit>().getContactsWithoutApp();
+      WidgetsBinding.instance.addObserver(this);
+      createBannerAd();
     } else if (await Permission.storage.request().isPermanentlyDenied) {
       await openAppSettings();
     } else if (await Permission.storage.request().isDenied) {
@@ -183,17 +127,38 @@ class _HomePageState extends State<HomePage> {
     userName = name;
   }
 
+  late BannerAd bannerad;
+  bool isbottomBannerAdLoaded = false;
   @override
   void initState() {
     super.initState();
-    getAllContactsInPhone();
     getUserName();
     AlarmHelper alarmHelper = AlarmHelper();
     alarmHelper.updateAudioState('NO', 'PANAMA');
-    _askContactsPermissions('');
-    getPhonesWithPermission();
 
-    context.read<AllAlarmsCubit>().getAllUSeralarms();
+    _askContactsPermissions('');
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    bannerad.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+  void createBannerAd() {
+    bannerad = BannerAd(
+        size: AdSize.banner,
+        adUnitId: AdHelper.bannerAdUnitId,
+        listener: BannerAdListener(onAdLoaded: (_) {
+          setState(() {
+            isbottomBannerAdLoaded = true;
+          });
+        }, onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+        }),
+        request: const AdRequest());
+    bannerad.load();
   }
 
   void modalBottomSheetMenu2() {
@@ -242,7 +207,7 @@ class _HomePageState extends State<HomePage> {
                   child: Center(
                     child: Text('Select from these contacts in your phone',
                         style: TextStyle(
-                          color: Color(0xFF7689D6),
+                          color: Colors.green,
                           fontFamily: 'Skranji',
                           fontSize: 18,
                         )),
@@ -255,7 +220,7 @@ class _HomePageState extends State<HomePage> {
                   child: Center(
                     child: Text('They have installed the app',
                         style: TextStyle(
-                          color: Color(0xFFBC343E),
+                          color: Color(0xCC385A64),
                           fontFamily: 'Skranji',
                           fontSize: 18,
                         )),
@@ -263,14 +228,57 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
                 Expanded(
-                  child: ListView(
-                      children: contactsWithApp
-                          .map(
-                            (user) => SingleContact2(
-                              user: user,
-                            ),
-                          )
-                          .toList()),
+                  child:
+                      BlocBuilder<ContactsWithAppCubit, ContactsWithAppState>(
+                    builder: (context, state) {
+                      return state.when(
+                          initial: () {
+                            return const Center(
+                                child: CircularProgressIndicator(
+                              color: Color(0xCC385A64),
+                              strokeWidth: 5,
+                            ));
+                          },
+                          loading: () {
+                            return const Center(
+                                child: CircularProgressIndicator(
+                              color: Color(0xCC385A64),
+                              strokeWidth: 5,
+                            ));
+                          },
+                          loaded: (contactsWithInstalledApps) {
+                            contactsWithApp = contactsWithInstalledApps;
+                            if (contactsWithApp.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.only(
+                                  top: 20.0,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                      'None of your contacts has installed voice notice',
+                                      style: TextStyle(
+                                        color: Color(0xCC385A64),
+                                        fontFamily: 'Skranji',
+                                        fontSize: 14,
+                                      )),
+                                ),
+                              );
+                            } else {
+                              return ListView(
+                                  children: contactsWithInstalledApps
+                                      .map(
+                                        (user) => SingleContact2(
+                                          user: user,
+                                        ),
+                                      )
+                                      .toList());
+                            }
+                          },
+                          error: (String message) => Center(
+                                child: Text(message),
+                              ));
+                    },
+                  ),
                 ),
               ],
             ),
@@ -324,7 +332,7 @@ class _HomePageState extends State<HomePage> {
                   child: Center(
                     child: Text('Select from these contacts',
                         style: TextStyle(
-                          color: Color(0xFF7689D6),
+                          color: Colors.green,
                           fontFamily: 'Skranji',
                           fontSize: 18,
                         )),
@@ -337,7 +345,7 @@ class _HomePageState extends State<HomePage> {
                   child: Center(
                     child: Text('They have given you permission',
                         style: TextStyle(
-                          color: Color(0xFFBC343E),
+                          color: Color(0xCC385A64),
                           fontFamily: 'Skranji',
                           fontSize: 18,
                         )),
@@ -345,14 +353,57 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
                 Expanded(
-                  child: ListView(
-                      children: usersWithPermission!
-                          .map(
-                            (user) => SingleContact(
-                              user: user,
-                            ),
-                          )
-                          .toList()),
+                  child: BlocBuilder<ContactsWithPermissionCubit,
+                      ContactsWithPermissionState>(
+                    builder: (context, state) {
+                      return state.when(
+                          initial: () {
+                            return const Center(
+                                child: CircularProgressIndicator(
+                              color: Color(0xCC385A64),
+                              strokeWidth: 5,
+                            ));
+                          },
+                          loading: () {
+                            return const Center(
+                                child: CircularProgressIndicator(
+                              color: Color(0xCC385A64),
+                              strokeWidth: 5,
+                            ));
+                          },
+                          loaded: (contactsWithPermission) {
+                            usersWithPermission = contactsWithPermission;
+                            if (usersWithPermission!.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.only(
+                                  top: 20.0,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                      'No contact has given you permission',
+                                      style: TextStyle(
+                                        color: Color(0xFFBC343E),
+                                        fontFamily: 'Skranji',
+                                        fontSize: 18,
+                                      )),
+                                ),
+                              );
+                            } else {
+                              return ListView(
+                                  children: contactsWithPermission
+                                      .map(
+                                        (user) => SingleContact(
+                                          user: user,
+                                        ),
+                                      )
+                                      .toList());
+                            }
+                          },
+                          error: (String message) => Center(
+                                child: Text(message),
+                              ));
+                    },
+                  ),
                 ),
               ],
             ),
@@ -406,348 +457,364 @@ class _HomePageState extends State<HomePage> {
     return BlocConsumer<AllAlarmsCubit, AllAlarmsState>(
       listener: (context, state) {},
       builder: (context, state) {
-        return Scaffold(
-          floatingActionButton: currentIndex == 2
-              ? FloatingActionButton(
-                  backgroundColor: const Color(0xFF7689D6),
-                  onPressed: () {
-                    modalBottomSheetMenu2();
-                  },
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: SvgPicture.asset('assets/icons/add.svg',
-                        color: Colors.white, fit: BoxFit.fitHeight),
-                  ),
-                )
-              : FloatingActionButton(
-                  backgroundColor: const Color(0xFF7689D6),
-                  onPressed: () {
-                    modalBottomSheetMenu();
-                  },
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: SvgPicture.asset('assets/icons/add.svg',
-                        color: Colors.white, fit: BoxFit.fitHeight),
-                  ),
-                ),
-          // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Builder(
-                    builder: (context) => IconButton(
-                      icon: SvgPicture.asset(
-                        "assets/icons/drawer.svg",
-                        height: 15,
-                        width: 34,
-                      ),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
-                ),
-                const Text('VOICE NOTICE',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontFamily: 'Skranji',
-                      fontSize: 25,
-                    )),
-              ],
-            ),
-            backgroundColor: currentIndex == 3
-                ? const Color(0xffF9F9F9)
-                : const Color(0xffF9F9F9),
-            elevation: 0,
-            centerTitle: false,
-            titleSpacing: 0,
-          ),
-          drawer: SizedBox(
-            width: MediaQuery.of(context).size.width / 1.25,
-            child: Drawer(
-              backgroundColor: const Color(0xffF9F9F9),
-              child: Column(
-                children: <Widget>[
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  DrawerHeader(
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent,
-                    ),
-                    child: SizedBox(
-                      height: 400.25,
-                      width: 400.5,
-                      child: SvgPicture.asset('assets/images/img13.svg',
-                          fit: BoxFit.fitHeight),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        currentIndex = 0;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'My Alarms',
-                      style: TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        currentIndex = 1;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'Created Alarms',
-                      style: TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        currentIndex = 2;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'Instant Voice Notice',
-                      style: TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        currentIndex = 3;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'Permissions',
-                      style: TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      final snackBar = SnackBar(
-                        duration: const Duration(seconds: 5),
-                        content: const Text(
-                          'You sure you want to logout?',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Skranji',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18),
-                        ),
-                        action: SnackBarAction(
-                          label: 'Proceed',
-                          textColor: const Color(0xFF7689D6),
-                          onPressed: () {
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (context) {
-                              return const OnboardingScreen();
-                            }));
-                          },
-                        ),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    },
-                    child: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Color(0xCC385A64),
-                        fontFamily: 'Skranji',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  Material(
-                    borderRadius: BorderRadius.circular(500),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(500),
-                      splashColor: const Color(0xCC385A64),
-                      onTap: () {
-                        Navigator.of(context).pop();
+        return RefreshIndicator(
+          onRefresh: () async {
+            context.read<ContactsWithAppCubit>().getContactsWithApp();
+            context.read<ContactsWithoutAppCubit>().getContactsWithoutApp();
+          },
+          child: Scaffold(
+              floatingActionButton: currentIndex == 2
+                  ? FloatingActionButton(
+                      backgroundColor: Colors.green,
+                      onPressed: () {
+                        modalBottomSheetMenu2();
                       },
-                      child: const CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Color(0xCC385A64),
-                        child: Icon(Icons.arrow_back, color: Colors.white),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: SvgPicture.asset('assets/icons/add.svg',
+                            color: Colors.white, fit: BoxFit.fitHeight),
+                      ),
+                    )
+                  : FloatingActionButton(
+                      backgroundColor: Colors.green,
+                      onPressed: () {
+                        modalBottomSheetMenu();
+                      },
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: SvgPicture.asset('assets/icons/add.svg',
+                            color: Colors.white, fit: BoxFit.fitHeight),
                       ),
                     ),
-                  ),
-                  Expanded(
-                      child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      height: 65,
-                      width: MediaQuery.of(context).size.width,
-                      color: const Color(0xCC385A64),
-                      child: const Center(
-                        child: Text(
-                          'Voice Notice v1.0.1',
+              // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+              appBar: AppBar(
+                automaticallyImplyLeading: false,
+                title: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Builder(
+                        builder: (context) => IconButton(
+                          icon: SvgPicture.asset(
+                            "assets/icons/drawer.svg",
+                            height: 15,
+                            width: 34,
+                          ),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                        ),
+                      ),
+                    ),
+                    const Text('VOICE NOTICE',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontFamily: 'Skranji',
+                          fontSize: 25,
+                        )),
+                  ],
+                ),
+                backgroundColor: currentIndex == 3
+                    ? const Color(0xffF9F9F9)
+                    : const Color(0xffF9F9F9),
+                elevation: 0,
+                centerTitle: false,
+                titleSpacing: 0,
+              ),
+              drawer: SizedBox(
+                width: MediaQuery.of(context).size.width / 1.25,
+                child: Drawer(
+                  backgroundColor: const Color(0xffF9F9F9),
+                  child: Column(
+                    children: <Widget>[
+                      const SizedBox(
+                        height: 30,
+                      ),
+                      DrawerHeader(
+                        decoration: const BoxDecoration(
+                          color: Colors.transparent,
+                        ),
+                        child: SizedBox(
+                          height: 400.25,
+                          width: 400.5,
+                          child: Image.asset('assets/icons/logoh.png',
+                              fit: BoxFit.fitHeight),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            currentIndex = 0;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'My Alarms',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xCC385A64),
                             fontFamily: 'Skranji',
-                            fontSize: 18,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                    ),
-                  ))
-                ],
-              ),
-            ),
-          ),
-          body: <Widget>[
-            Column(
-              children: [
-                const SizedBox(
-                  height: 10,
-                ),
-                TopBanner(userName: userName),
-                const SizedBox(
-                  height: 20,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                  child: Container(
-                    height: 0.7,
-                    color: Colors.black12,
+                      const SizedBox(
+                        height: 45,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            currentIndex = 1;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Created Alarms',
+                          style: TextStyle(
+                            color: Color(0xCC385A64),
+                            fontFamily: 'Skranji',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 45,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            currentIndex = 2;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Instant Voice Notice',
+                          style: TextStyle(
+                            color: Color(0xCC385A64),
+                            fontFamily: 'Skranji',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 45,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            currentIndex = 3;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Permissions',
+                          style: TextStyle(
+                            color: Color(0xCC385A64),
+                            fontFamily: 'Skranji',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 45,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          final snackBar = SnackBar(
+                            duration: const Duration(seconds: 5),
+                            content: const Text(
+                              'You sure you want to logout?',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Skranji',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 18),
+                            ),
+                            action: SnackBarAction(
+                              label: 'Proceed',
+                              textColor: const Color(0xFF7689D6),
+                              onPressed: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) {
+                                  return const OnboardingScreen();
+                                }));
+                              },
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        },
+                        child: const Text(
+                          'Log Out',
+                          style: TextStyle(
+                            color: Color(0xCC385A64),
+                            fontFamily: 'Skranji',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 45,
+                      ),
+                      Material(
+                        borderRadius: BorderRadius.circular(500),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(500),
+                          splashColor: const Color(0xCC385A64),
+                          onTap: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Color(0xCC385A64),
+                            child: Icon(Icons.arrow_back, color: Colors.yellow),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                          child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          height: 65,
+                          width: MediaQuery.of(context).size.width,
+                          color: Colors.green,
+                          child: const Center(
+                            child: Text(
+                              'Voice Notice v1.0.1',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Skranji',
+                                fontSize: 18,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ))
+                    ],
                   ),
                 ),
-                BlocBuilder<AllAlarmsCubit, AllAlarmsState>(
-                  builder: (context, state) {
-                    return state.when(
-                        initial: () => Column(
-                              children: const [
-                                SizedBox(height: 100),
-                                Center(
-                                    child: CircularProgressIndicator(
-                                  color: Color(0xCC385A64),
-                                  strokeWidth: 5,
-                                )),
-                              ],
-                            ),
-                        loading: () => Column(
-                              children: const [
-                                SizedBox(height: 100),
-                                Center(
-                                    child: CircularProgressIndicator(
-                                  color: Color(0xCC385A64),
-                                  strokeWidth: 5,
-                                )),
-                              ],
-                            ),
-                        loaded: (List<dynamic> allAlarms) {
-                          allUserAlarms = allAlarms;
+              ),
+              body: <Widget>[
+                Column(
+                  children: [
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TopBanner(userName: userName),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                      child: Container(
+                        height: 0.7,
+                        color: Colors.black12,
+                      ),
+                    ),
+                    BlocBuilder<AllAlarmsCubit, AllAlarmsState>(
+                      builder: (context, state) {
+                        return state.when(
+                            initial: () => Column(
+                                  children: const [
+                                    SizedBox(height: 100),
+                                    Center(
+                                        child: CircularProgressIndicator(
+                                      color: Color(0xCC385A64),
+                                      strokeWidth: 5,
+                                    )),
+                                  ],
+                                ),
+                            loading: () => Column(
+                                  children: const [
+                                    SizedBox(height: 100),
+                                    Center(
+                                        child: CircularProgressIndicator(
+                                      color: Color(0xCC385A64),
+                                      strokeWidth: 5,
+                                    )),
+                                  ],
+                                ),
+                            loaded:
+                                (List<dynamic> allAlarms, List allUserNames) {
+                              allUserAlarms = allAlarms;
 
-                          if (allUserAlarms.isEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 20.0),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                    height: 250.25,
-                                    width: 200.5,
-                                    child: Image.asset(
-                                      "assets/images/empty.gif",
-                                      height: 125.0,
-                                      width: 125.0,
-                                    ),
+                              if (allUserAlarms.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 20.0),
+                                  child: Column(
+                                    children: [
+                                      SizedBox(
+                                        height: 250.25,
+                                        width: 200.5,
+                                        child: Image.asset(
+                                          "assets/images/empty.gif",
+                                          height: 125.0,
+                                          width: 125.0,
+                                        ),
+                                      ),
+                                      const Text('No alarms for you yet',
+                                          style: TextStyle(
+                                            color: Color(0xCC385A64),
+                                            fontFamily: 'Skranji',
+                                            fontSize: 18,
+                                          )),
+                                    ],
                                   ),
-                                  const Text('No alarms for you yet',
-                                      style: TextStyle(
-                                        color: Color(0xCC385A64),
-                                        fontFamily: 'Skranji',
-                                        fontSize: 18,
-                                      )),
-                                ],
-                              ),
-                            );
-                          } else {
-                            return Expanded(
-                              child: AnimatedList(
-                                  key: listKey,
-                                  initialItemCount: allAlarms.length,
-                                  itemBuilder: (context, index, animation) {
-                                    return ListItemWidget(
-                                        item: allAlarms[index],
-                                        animation: animation,
-                                        onClicked: () {
-                                          removeItem(
-                                            index,
-                                            allAlarms[index]['RecordUrl'],
-                                          );
-                                        });
-                                  }),
-                            );
-                          }
-                        },
-                        error: (String message) => Center(
-                              child: Text(message),
-                            ));
-                  },
-                )
-              ],
-            ),
-            const CreatedAlarms(),
-            const InstantVoiceNotice(),
-            const ContactsPermissions(),
-            const OnboardingScreen(),
-          ][currentIndex],
+                                );
+                              } else {
+                                return Expanded(
+                                  child: AnimatedList(
+                                      key: listKey,
+                                      initialItemCount: allAlarms.length,
+                                      itemBuilder: (context, index, animation) {
+                                        return ListItemWidget(
+                                            item: allAlarms[index],
+                                            animation: animation,
+                                            name: allUserNames[index],
+                                            onClicked: () {
+                                              removeItem(
+                                                index,
+                                                allAlarms[index]['RecordUrl'],
+                                              );
+                                            });
+                                      }),
+                                );
+                              }
+                            },
+                            error: (String message) => Center(
+                                  child: Text(message),
+                                ));
+                      },
+                    )
+                  ],
+                ),
+                const CreatedAlarms(),
+                const InstantVoiceNotice(),
+                const ContactsPermissions(),
+                const OnboardingScreen(),
+              ][currentIndex],
+              bottomNavigationBar: isbottomBannerAdLoaded == false
+                  ? Container(
+                      height: 10,
+                      color: Colors.white,
+                    )
+                  : SizedBox(
+                      height: bannerad.size.height.toDouble(),
+                      width: bannerad.size.width.toDouble(),
+                      child: AdWidget(ad: bannerad))),
         );
       },
     );
@@ -759,8 +826,13 @@ class ListItemWidget extends StatefulWidget {
   final Map<String, dynamic> item;
   final Animation<double> animation;
   final VoidCallback? onClicked;
+  final String? name;
   const ListItemWidget(
-      {Key? key, required this.item, required this.animation, this.onClicked})
+      {Key? key,
+      required this.item,
+      required this.animation,
+      this.onClicked,
+      this.name})
       : super(key: key);
 
   @override
@@ -836,7 +908,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                           height: 70,
                                           width: 70,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xCC385A64),
+                                            color: Colors.green,
                                             borderRadius:
                                                 const BorderRadius.all(
                                                     Radius.circular(100)),
@@ -847,8 +919,9 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                           ),
                                           child: Center(
                                             child: Text(
-                                                widget
-                                                    .item['createdByUserName'],
+                                                widget.name
+                                                    .toString()
+                                                    .split(" ")[0],
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontFamily: 'Skranji',
@@ -965,7 +1038,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                                                 return Text(
                                                     '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
                                                     style: const TextStyle(
-                                                      color: Color(0xFF7689D6),
+                                                      color: Colors.green,
                                                       fontFamily: 'Skranji',
                                                       fontSize: 28,
                                                     ));
@@ -1033,7 +1106,7 @@ class _ListItemWidgetState extends State<ListItemWidget> {
                               child: Row(
                                 children: [
                                   Text(
-                                      '${widget.item['createdByUserName']} created this alarm for you',
+                                      '${widget.name.toString().split(" ")[0]} created this alarm for you',
                                       style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',
@@ -1316,19 +1389,22 @@ class TopBanner extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 30.0, top: 10),
                         child: Text('Top of the ${greeting()}',
                             style: const TextStyle(
-                              color: Color(0xFF7689D6),
+                              color: Colors.yellow,
                               fontFamily: 'Skranji',
                               fontSize: 18,
                             )),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(right: 30.0, top: 10),
-                        child: SizedBox(
-                          height: 15.0,
-                          width: 15.0,
-                          child: SvgPicture.asset(
-                            'assets/icons/cancel.svg',
-                            // color: Colors.white,
+                        child: InkWell(
+                          onTap: () {},
+                          child: SizedBox(
+                            height: 15.0,
+                            width: 15.0,
+                            child: SvgPicture.asset(
+                              'assets/icons/cancel.svg',
+                              // color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -1340,7 +1416,7 @@ class TopBanner extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 30.0, top: 5),
                         child: Text(userName,
                             style: const TextStyle(
-                              color: Color(0xFF7689D6),
+                              color: Colors.green,
                               fontFamily: 'Skranji',
                               fontSize: 18,
                             )),

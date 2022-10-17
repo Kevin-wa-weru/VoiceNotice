@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
 
-part of 'create_alarms_cubit.dart';
+part of 'contacts_with_permission_cubit.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -15,13 +15,12 @@ final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
 /// @nodoc
-mixin _$CreateAlarmsState {
+mixin _$ContactsWithPermissionState {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms, List<dynamic> userName)
-        loaded,
+    required TResult Function(List<dynamic> allContactsWithPermissions) loaded,
     required TResult Function(String message) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -29,7 +28,7 @@ mixin _$CreateAlarmsState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -37,7 +36,7 @@ mixin _$CreateAlarmsState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) =>
@@ -70,20 +69,21 @@ mixin _$CreateAlarmsState {
 }
 
 /// @nodoc
-abstract class $CreateAlarmsStateCopyWith<$Res> {
-  factory $CreateAlarmsStateCopyWith(
-          CreateAlarmsState value, $Res Function(CreateAlarmsState) then) =
-      _$CreateAlarmsStateCopyWithImpl<$Res>;
+abstract class $ContactsWithPermissionStateCopyWith<$Res> {
+  factory $ContactsWithPermissionStateCopyWith(
+          ContactsWithPermissionState value,
+          $Res Function(ContactsWithPermissionState) then) =
+      _$ContactsWithPermissionStateCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class _$CreateAlarmsStateCopyWithImpl<$Res>
-    implements $CreateAlarmsStateCopyWith<$Res> {
-  _$CreateAlarmsStateCopyWithImpl(this._value, this._then);
+class _$ContactsWithPermissionStateCopyWithImpl<$Res>
+    implements $ContactsWithPermissionStateCopyWith<$Res> {
+  _$ContactsWithPermissionStateCopyWithImpl(this._value, this._then);
 
-  final CreateAlarmsState _value;
+  final ContactsWithPermissionState _value;
   // ignore: unused_field
-  final $Res Function(CreateAlarmsState) _then;
+  final $Res Function(ContactsWithPermissionState) _then;
 }
 
 /// @nodoc
@@ -95,7 +95,7 @@ abstract class _$$_InitialCopyWith<$Res> {
 
 /// @nodoc
 class __$$_InitialCopyWithImpl<$Res>
-    extends _$CreateAlarmsStateCopyWithImpl<$Res>
+    extends _$ContactsWithPermissionStateCopyWithImpl<$Res>
     implements _$$_InitialCopyWith<$Res> {
   __$$_InitialCopyWithImpl(_$_Initial _value, $Res Function(_$_Initial) _then)
       : super(_value, (v) => _then(v as _$_Initial));
@@ -111,7 +111,7 @@ class _$_Initial implements _Initial {
 
   @override
   String toString() {
-    return 'CreateAlarmsState.initial()';
+    return 'ContactsWithPermissionState.initial()';
   }
 
   @override
@@ -128,8 +128,7 @@ class _$_Initial implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms, List<dynamic> userName)
-        loaded,
+    required TResult Function(List<dynamic> allContactsWithPermissions) loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -140,7 +139,7 @@ class _$_Initial implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
   }) {
     return initial?.call();
@@ -151,7 +150,7 @@ class _$_Initial implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -199,7 +198,7 @@ class _$_Initial implements _Initial {
   }
 }
 
-abstract class _Initial implements CreateAlarmsState {
+abstract class _Initial implements ContactsWithPermissionState {
   const factory _Initial() = _$_Initial;
 }
 
@@ -212,7 +211,7 @@ abstract class _$$_LoadingCopyWith<$Res> {
 
 /// @nodoc
 class __$$_LoadingCopyWithImpl<$Res>
-    extends _$CreateAlarmsStateCopyWithImpl<$Res>
+    extends _$ContactsWithPermissionStateCopyWithImpl<$Res>
     implements _$$_LoadingCopyWith<$Res> {
   __$$_LoadingCopyWithImpl(_$_Loading _value, $Res Function(_$_Loading) _then)
       : super(_value, (v) => _then(v as _$_Loading));
@@ -228,7 +227,7 @@ class _$_Loading implements _Loading {
 
   @override
   String toString() {
-    return 'CreateAlarmsState.loading()';
+    return 'ContactsWithPermissionState.loading()';
   }
 
   @override
@@ -245,8 +244,7 @@ class _$_Loading implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms, List<dynamic> userName)
-        loaded,
+    required TResult Function(List<dynamic> allContactsWithPermissions) loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -257,7 +255,7 @@ class _$_Loading implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
   }) {
     return loading?.call();
@@ -268,7 +266,7 @@ class _$_Loading implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -316,7 +314,7 @@ class _$_Loading implements _Loading {
   }
 }
 
-abstract class _Loading implements CreateAlarmsState {
+abstract class _Loading implements ContactsWithPermissionState {
   const factory _Loading() = _$_Loading;
 }
 
@@ -324,12 +322,12 @@ abstract class _Loading implements CreateAlarmsState {
 abstract class _$$_LoadedCopyWith<$Res> {
   factory _$$_LoadedCopyWith(_$_Loaded value, $Res Function(_$_Loaded) then) =
       __$$_LoadedCopyWithImpl<$Res>;
-  $Res call({List<dynamic> allAlarms, List<dynamic> userName});
+  $Res call({List<dynamic> allContactsWithPermissions});
 }
 
 /// @nodoc
 class __$$_LoadedCopyWithImpl<$Res>
-    extends _$CreateAlarmsStateCopyWithImpl<$Res>
+    extends _$ContactsWithPermissionStateCopyWithImpl<$Res>
     implements _$$_LoadedCopyWith<$Res> {
   __$$_LoadedCopyWithImpl(_$_Loaded _value, $Res Function(_$_Loaded) _then)
       : super(_value, (v) => _then(v as _$_Loaded));
@@ -339,17 +337,12 @@ class __$$_LoadedCopyWithImpl<$Res>
 
   @override
   $Res call({
-    Object? allAlarms = freezed,
-    Object? userName = freezed,
+    Object? allContactsWithPermissions = freezed,
   }) {
     return _then(_$_Loaded(
-      allAlarms == freezed
-          ? _value._allAlarms
-          : allAlarms // ignore: cast_nullable_to_non_nullable
-              as List<dynamic>,
-      userName == freezed
-          ? _value._userName
-          : userName // ignore: cast_nullable_to_non_nullable
+      allContactsWithPermissions == freezed
+          ? _value._allContactsWithPermissions
+          : allContactsWithPermissions // ignore: cast_nullable_to_non_nullable
               as List<dynamic>,
     ));
   }
@@ -358,27 +351,19 @@ class __$$_LoadedCopyWithImpl<$Res>
 /// @nodoc
 
 class _$_Loaded implements _Loaded {
-  const _$_Loaded(final List<dynamic> allAlarms, final List<dynamic> userName)
-      : _allAlarms = allAlarms,
-        _userName = userName;
+  const _$_Loaded(final List<dynamic> allContactsWithPermissions)
+      : _allContactsWithPermissions = allContactsWithPermissions;
 
-  final List<dynamic> _allAlarms;
+  final List<dynamic> _allContactsWithPermissions;
   @override
-  List<dynamic> get allAlarms {
+  List<dynamic> get allContactsWithPermissions {
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_allAlarms);
-  }
-
-  final List<dynamic> _userName;
-  @override
-  List<dynamic> get userName {
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_userName);
+    return EqualUnmodifiableListView(_allContactsWithPermissions);
   }
 
   @override
   String toString() {
-    return 'CreateAlarmsState.loaded(allAlarms: $allAlarms, userName: $userName)';
+    return 'ContactsWithPermissionState.loaded(allContactsWithPermissions: $allContactsWithPermissions)';
   }
 
   @override
@@ -386,16 +371,14 @@ class _$_Loaded implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_Loaded &&
-            const DeepCollectionEquality()
-                .equals(other._allAlarms, _allAlarms) &&
-            const DeepCollectionEquality().equals(other._userName, _userName));
+            const DeepCollectionEquality().equals(
+                other._allContactsWithPermissions,
+                _allContactsWithPermissions));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(_allAlarms),
-      const DeepCollectionEquality().hash(_userName));
+  int get hashCode => Object.hash(runtimeType,
+      const DeepCollectionEquality().hash(_allContactsWithPermissions));
 
   @JsonKey(ignore: true)
   @override
@@ -407,11 +390,10 @@ class _$_Loaded implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms, List<dynamic> userName)
-        loaded,
+    required TResult Function(List<dynamic> allContactsWithPermissions) loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(allAlarms, userName);
+    return loaded(allContactsWithPermissions);
   }
 
   @override
@@ -419,10 +401,10 @@ class _$_Loaded implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
   }) {
-    return loaded?.call(allAlarms, userName);
+    return loaded?.call(allContactsWithPermissions);
   }
 
   @override
@@ -430,12 +412,12 @@ class _$_Loaded implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(allAlarms, userName);
+      return loaded(allContactsWithPermissions);
     }
     return orElse();
   }
@@ -478,12 +460,11 @@ class _$_Loaded implements _Loaded {
   }
 }
 
-abstract class _Loaded implements CreateAlarmsState {
-  const factory _Loaded(
-      final List<dynamic> allAlarms, final List<dynamic> userName) = _$_Loaded;
+abstract class _Loaded implements ContactsWithPermissionState {
+  const factory _Loaded(final List<dynamic> allContactsWithPermissions) =
+      _$_Loaded;
 
-  List<dynamic> get allAlarms;
-  List<dynamic> get userName;
+  List<dynamic> get allContactsWithPermissions;
   @JsonKey(ignore: true)
   _$$_LoadedCopyWith<_$_Loaded> get copyWith =>
       throw _privateConstructorUsedError;
@@ -497,7 +478,8 @@ abstract class _$$_ErrorCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$_ErrorCopyWithImpl<$Res> extends _$CreateAlarmsStateCopyWithImpl<$Res>
+class __$$_ErrorCopyWithImpl<$Res>
+    extends _$ContactsWithPermissionStateCopyWithImpl<$Res>
     implements _$$_ErrorCopyWith<$Res> {
   __$$_ErrorCopyWithImpl(_$_Error _value, $Res Function(_$_Error) _then)
       : super(_value, (v) => _then(v as _$_Error));
@@ -528,7 +510,7 @@ class _$_Error implements _Error {
 
   @override
   String toString() {
-    return 'CreateAlarmsState.error(message: $message)';
+    return 'ContactsWithPermissionState.error(message: $message)';
   }
 
   @override
@@ -553,8 +535,7 @@ class _$_Error implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<dynamic> allAlarms, List<dynamic> userName)
-        loaded,
+    required TResult Function(List<dynamic> allContactsWithPermissions) loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -565,7 +546,7 @@ class _$_Error implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
   }) {
     return error?.call(message);
@@ -576,7 +557,7 @@ class _$_Error implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<dynamic> allAlarms, List<dynamic> userName)? loaded,
+    TResult Function(List<dynamic> allContactsWithPermissions)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -624,7 +605,7 @@ class _$_Error implements _Error {
   }
 }
 
-abstract class _Error implements CreateAlarmsState {
+abstract class _Error implements ContactsWithPermissionState {
   const factory _Error(final String message) = _$_Error;
 
   String get message;

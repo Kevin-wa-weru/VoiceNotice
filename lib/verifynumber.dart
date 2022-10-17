@@ -108,7 +108,7 @@ class _VerifyNumberState extends State<VerifyNumber> {
                   Center(
                     child: Text('Enter OTP sent to ${widget.number}',
                         style: const TextStyle(
-                          color: Color(0xFF7689D6),
+                          color: Colors.green,
                           fontFamily: 'Skranji',
                           fontSize: 18,
                         )),
@@ -196,7 +196,7 @@ class _VerifyNumberState extends State<VerifyNumber> {
                         child: const Center(
                           child: Text('Resend OTP ',
                               style: TextStyle(
-                                color: Color(0xFFBC343E),
+                                color: Colors.green,
                                 fontFamily: 'Skranji',
                                 fontSize: 18,
                               )),
@@ -240,7 +240,7 @@ class _VerifyNumberState extends State<VerifyNumber> {
                       child: const Center(
                         child: Text('Edit  Number',
                             style: TextStyle(
-                              color: Color(0xFF7689D6),
+                              color: Colors.green,
                               fontFamily: 'Skranji',
                               fontSize: 18,
                             )),

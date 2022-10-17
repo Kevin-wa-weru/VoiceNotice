@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:contacts_service/contacts_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -28,7 +29,7 @@ class AllAlarmsCubit extends Cubit<AllAlarmsState> {
 
     if (response.docs.isEmpty) {
       _allUSeralarms = [];
-      emit(AllAlarmsState.loaded(_allUSeralarms));
+      emit(AllAlarmsState.loaded(_allUSeralarms, []));
     } else {
       List alarms = response.docs;
 
@@ -39,7 +40,20 @@ class AllAlarmsCubit extends Cubit<AllAlarmsState> {
       }
 
       _allUSeralarms = tempHolder;
-      emit(AllAlarmsState.loaded(_allUSeralarms));
+
+      List userNames = [];
+      for (var alarm in tempHolder) {
+        var result = await changeUserName(alarm['createdForPhoneNUmber']);
+        if (result == '') {
+          userNames.add(alarm['createdForUserName']);
+        } else {
+          userNames.add(result);
+        }
+      }
+
+      print('Wjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj $userNames');
+
+      emit(AllAlarmsState.loaded(_allUSeralarms, userNames));
     }
   }
 
@@ -48,10 +62,28 @@ class AllAlarmsCubit extends Cubit<AllAlarmsState> {
     alarmHelper.initializeDatabase().then((value) async {
       List uSeralarms = await alarmHelper.getAlarms();
       if (uSeralarms.isEmpty) {
-        emit(const AllAlarmsState.loaded([]));
+        emit(const AllAlarmsState.loaded([], []));
       } else {
         //do nothing
       }
     });
+  }
+
+  changeUserName(phone) async {
+    List<Contact> phonecontacts =
+        await ContactsService.getContacts(withThumbnails: false);
+
+    List<Contact> user = phonecontacts
+        .where((element) =>
+            phone.replaceAll(RegExp(' '), '').replaceAll(RegExp('-'), '') ==
+            element.phones!.first.value!
+                .replaceAll(RegExp(' '), '')
+                .replaceAll(RegExp('-'), ''))
+        .toList();
+    if (user.isEmpty) {
+      return '';
+    } else {
+      return user.first.displayName;
+    }
   }
 }

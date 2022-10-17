@@ -38,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 8.0,
       width: isActive ? 24.0 : 16.0,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF7689D6) : Colors.grey,
+        color: isActive ? Colors.green : Colors.grey,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
     );
@@ -113,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       ),
                                       Text('VOICE NOTICE',
                                           style: TextStyle(
-                                            color: Color(0xFFBC343E),
+                                            color: Colors.yellow,
                                             fontFamily: 'Skranji',
                                             fontSize: 30,
                                           )),
@@ -122,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       ),
                                       Text('Send voice notes as alarms',
                                           style: TextStyle(
-                                            color: Color(0xFF7689D6),
+                                            color: Colors.green,
                                             fontFamily: 'Skranji',
                                             fontSize: 15,
                                           )),
@@ -137,8 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   child: SizedBox(
                                     height: 105.25,
                                     width: 100.5,
-                                    child: SvgPicture.asset(
-                                        'assets/images/img5.svg',
+                                    child: Image.asset('assets/icons/logoh.png',
                                         fit: BoxFit.fitHeight),
                                   ),
                                 ),
@@ -179,7 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                         Text('Alarms just became fun',
                                             style: TextStyle(
-                                              color: Color(0xFF7689D6),
+                                              color: Colors.green,
                                               fontFamily: 'Skranji',
                                               fontSize: 15,
                                             )),
@@ -211,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                         Text('Set is as alarm for friend',
                                             style: TextStyle(
-                                              color: Color(0xFFBC343E),
+                                              color: Colors.yellow,
                                               fontFamily: 'Skranji',
                                               fontSize: 15,
                                             )),
@@ -261,7 +260,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   width: 100,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
-                                    color: const Color(0xFF7689D6),
+                                    color: Colors.green,
                                   ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -314,7 +313,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                         const Text('VOICE NOTICE',
                                             style: TextStyle(
-                                              color: Color(0xFFBC343E),
+                                              color: Colors.yellow,
                                               fontFamily: 'Skranji',
                                               fontSize: 30,
                                             )),
@@ -324,7 +323,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         const Text(
                                             'Set an alarm for your friends',
                                             style: TextStyle(
-                                              color: Color(0xFF7689D6),
+                                              color: Colors.green,
                                               fontFamily: 'Skranji',
                                               fontSize: 15,
                                             )),
@@ -339,7 +338,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                               child: Text(
                                                   'Using custom recorded voices',
                                                   style: TextStyle(
-                                                    color: Color(0xFF7689D6),
+                                                    color: Colors.green,
                                                     fontFamily: 'Skranji',
                                                     fontSize: 15,
                                                   )),
@@ -354,9 +353,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     child: SizedBox(
                                       height: 105.25,
                                       width: 100.5,
-                                      child: SvgPicture.asset(
-                                          'assets/images/img13.svg',
-                                          fit: BoxFit.fitWidth),
+                                      child: Image.asset(
+                                          'assets/icons/logoh.png',
+                                          fit: BoxFit.fitHeight),
                                     ),
                                   ),
                                 ],
@@ -498,7 +497,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 width: 150,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(15),
-                                  color: const Color(0xFF7689D6),
+                                  color: Colors.green,
                                 ),
                                 child: const Center(
                                   child: Text('Create Account',

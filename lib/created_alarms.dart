@@ -11,6 +11,7 @@ import 'package:voicenotice/Cubits/cubit/all_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/create_alarms_cubit.dart';
 import 'package:voicenotice/Cubits/cubit/edit_time_cubit.dart';
 import 'package:voicenotice/homepage.dart';
+import 'package:contacts_service/contacts_service.dart';
 
 class CreatedAlarms extends StatefulWidget {
   const CreatedAlarms({Key? key}) : super(key: key);
@@ -125,7 +126,7 @@ class _CreatedAlarmsState extends State<CreatedAlarms> {
                               )),
                             ],
                           ),
-                      loaded: (List<dynamic> allAlarms) {
+                      loaded: (List<dynamic> allAlarms, List allUsernames) {
                         allCreatedAlarms = allAlarms;
 
                         if (allCreatedAlarms!.isEmpty) {
@@ -159,6 +160,7 @@ class _CreatedAlarmsState extends State<CreatedAlarms> {
                                 itemBuilder: (context, index, animation) {
                                   return ListOfItemWidget(
                                       item: allAlarms[index],
+                                      name: allUsernames[index].split(" ")[0],
                                       animation: animation,
                                       onClicked: () async {
                                         var response = await removeItem(
@@ -221,8 +223,13 @@ class ListOfItemWidget extends StatefulWidget {
   final Map<String, dynamic> item;
   final Animation<double> animation;
   final VoidCallback? onClicked;
+  final String? name;
   const ListOfItemWidget(
-      {Key? key, required this.item, required this.animation, this.onClicked})
+      {Key? key,
+      required this.item,
+      required this.animation,
+      this.onClicked,
+      this.name})
       : super(key: key);
 
   @override
@@ -320,7 +327,7 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                           height: 70,
                                           width: 70,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xCC385A64),
+                                            color: Colors.green,
                                             borderRadius:
                                                 const BorderRadius.all(
                                                     Radius.circular(100)),
@@ -330,15 +337,13 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(
-                                                widget
-                                                    .item['createdForUserName'],
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontFamily: 'Skranji',
-                                                  fontSize: 18,
-                                                )),
-                                          )),
+                                              child:
+                                                  Text(widget.name.toString(),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontFamily: 'Skranji',
+                                                        fontSize: 18,
+                                                      )))),
                                     ),
                                     Transform.translate(
                                       offset: const Offset(0.0, -15.0),
@@ -475,7 +480,7 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                                 return Text(
                                                     '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
                                                     style: const TextStyle(
-                                                      color: Color(0xFF7689D6),
+                                                      color: Colors.green,
                                                       fontFamily: 'Skranji',
                                                       fontSize: 28,
                                                     ));
@@ -484,7 +489,7 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                                 return Text(
                                                     '${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour} : ${DateTime.parse(widget.item['DateTime'].toDate().toString()).minute} ${DateTime.parse(widget.item['DateTime'].toDate().toString()).hour > 12 ? 'PM' : 'AM'}',
                                                     style: const TextStyle(
-                                                      color: Color(0xFF7689D6),
+                                                      color: Colors.green,
                                                       fontFamily: 'Skranji',
                                                       fontSize: 28,
                                                     ));
@@ -495,8 +500,7 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                                                   return Text(
                                                       '$hour : $minute ${hour > 12 ? 'PM' : 'AM'}',
                                                       style: const TextStyle(
-                                                        color:
-                                                            Color(0xFF7689D6),
+                                                        color: Colors.green,
                                                         fontFamily: 'Skranji',
                                                         fontSize: 28,
                                                       ));
@@ -542,8 +546,7 @@ class _ListOfItemWidgetState extends State<ListOfItemWidget> {
                               padding: const EdgeInsets.only(left: 20.0),
                               child: Row(
                                 children: [
-                                  Text(
-                                      'You created this for ${widget.item['createdForUserName']}',
+                                  Text('You created this for ${widget.name}',
                                       style: const TextStyle(
                                         color: Color(0xFF385A64),
                                         fontFamily: 'Skranji',

@@ -41,7 +41,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
     return Text('$minutes:$seconds',
         style: const TextStyle(
-          color: Color(0xFF7689D6),
+          color: Color(0xCC385A64),
           fontFamily: 'Skranji',
           fontSize: 28,
         ));
@@ -248,7 +248,7 @@ class _RecordingPageState extends State<RecordingPage> {
                                       child: SvgPicture.asset(
                                           'assets/icons/microphone.svg',
                                           height: 6,
-                                          color: const Color(0xFFBC343E),
+                                          color: Colors.green,
                                           fit: BoxFit.fitHeight),
                                     ),
                                     const SizedBox(
@@ -300,8 +300,8 @@ class _RecordingPageState extends State<RecordingPage> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
                                 color: isRecording
-                                    ? const Color(0xFFBC343E)
-                                    : const Color(0xFF7689D6),
+                                    ? Colors.green
+                                    : const Color(0xCC385A64),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -348,8 +348,8 @@ class _RecordingPageState extends State<RecordingPage> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
                                 color: isPlaying
-                                    ? const Color(0xFFBC343E)
-                                    : const Color(0xFF7689D6),
+                                    ? Colors.green
+                                    : const Color(0xCC385A64),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -445,7 +445,7 @@ class _RecordingPageState extends State<RecordingPage> {
                           width: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: const Color(0xFF7689D6),
+                            color: const Color(0xCC385A64),
                           ),
                           child: Center(
                             child: Text(
@@ -472,7 +472,7 @@ class _RecordingPageState extends State<RecordingPage> {
                               unselectedColor: const Color(0xCC385A64),
                               accentColor: const Color(0xFF7689D6),
                               okStyle: const TextStyle(
-                                color: Color(0xFF7689D6),
+                                color: Color(0xCC385A64),
                                 fontFamily: 'Skranji',
                                 fontSize: 18,
                                 // fontWeight: FontWeight.w600,
@@ -502,7 +502,7 @@ class _RecordingPageState extends State<RecordingPage> {
                           width: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: const Color(0xFF7689D6),
+                            color: const Color(0xCC385A64),
                           ),
                           child: Center(
                             child: Text(
@@ -696,10 +696,10 @@ class _RecordingPageState extends State<RecordingPage> {
                     },
                     child: Container(
                       height: 40,
-                      width: MediaQuery.of(context).size.width * 0.7,
+                      width: MediaQuery.of(context).size.width * 0.4,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: const Color(0xFF7689D6),
+                        color: Colors.green,
                       ),
                       child: appisLoading == true
                           ? const Center(
